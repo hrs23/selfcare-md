@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Secrets
+.env
+.env.local
+*.p12
+*.mobileprovision
+
+# Playwright CLI session dumps (may contain PII from browser automation)
+.playwright-cli/
+
+*.xcodeproj
+build/
+.tools/
+.playwright-cli/
+DerivedData/
+.build/
+Core/.swiftpm/

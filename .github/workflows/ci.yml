@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    name: Core tests
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test
+        run: swift test --package-path Core
+
+  app:
+    name: App build
+    runs-on: macos-26
+    env:
+      XCODEGEN_VERSION: "2.45.4"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen (pinned binary)
+        run: |
+          set -euo pipefail
+          mkdir -p .tools
+          curl -fL -o .tools/xcodegen.zip \
+            "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip"
+          unzip -qo .tools/xcodegen.zip -d .tools
+          chmod +x .tools/xcodegen/bin/xcodegen
+          echo "${{ github.workspace }}/.tools/xcodegen/bin" >> "$GITHUB_PATH"
+      - name: Generate Xcode project
+        run: xcodegen generate
+      - name: Build
+        run: |
+          set -euo pipefail
+          xcodebuild build \
+            -project SelfcareMD.xcodeproj -scheme SelfcareMD \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/ci \
+            CODE_SIGNING_ALLOWED=NO

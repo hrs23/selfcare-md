@@ -1,0 +1,68 @@
+name: SelfcareMD
+options:
+  bundleIdPrefix: dev.selfbase
+  deploymentTarget:
+    iOS: "18.0"
+packages:
+  SelfcareCore:
+    path: Core
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    DEVELOPMENT_TEAM: 7L3M83VR52
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  SelfcareMD:
+    type: application
+    platform: iOS
+    sources:
+      - App/Sources
+      - App/Resources/Assets.xcassets
+      - path: App/Resources/Packs
+        type: folder
+        buildPhase: resources
+    dependencies:
+      - package: SelfcareCore
+    entitlements:
+      path: App/SelfcareMD.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
+        com.apple.developer.healthkit.background-delivery: true
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: selfcare.md
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        ITSAppUsesNonExemptEncryption: false
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        NSHealthShareUsageDescription: Import your records from Apple Health into your daily pages.
+        NSHealthUpdateUsageDescription: Save timer workouts to Apple Health.
+        NSCameraUsageDescription: Scan a QR code to set up sync.
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.selfbase.selfcaremd
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+        SWIFT_APPROACHABLE_CONCURRENCY: YES
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.healthcare-fitness
+    postBuildScripts:
+      - name: Debug OpenAI key
+        basedOnDependencyAnalysis: false
+        script: |
+          KEY="${DEBUG_OPENAI_API_KEY:-}"
+          FILE="$HOME/.config/selfcare-md/debug-openai-key"
+          if [ -z "$KEY" ] && [ -f "$FILE" ]; then KEY="$(tr -d '\n\r ' < "$FILE")"; fi
+          PLIST="$TARGET_BUILD_DIR/$INFOPLIST_PATH"
+          [ -f "$PLIST" ] || exit 0
+          /usr/libexec/PlistBuddy -c "Delete :SelfcareDebugOpenAIKey" "$PLIST" >/dev/null 2>&1 || true
+          if [ -n "$KEY" ]; then
+            /usr/libexec/PlistBuddy -c "Add :SelfcareDebugOpenAIKey string $KEY" "$PLIST"
+          fi
