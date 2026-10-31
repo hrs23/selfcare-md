@@ -104,10 +104,6 @@ final class SyncService {
         }
     }
 
-    func cancelInitial() {
-        disconnect()
-    }
-
     func remoteText(_ path: String) async -> String? {
         guard let engine = try? makeEngine(), let data = try? await engine.remoteData(path) else { return nil }
         return String(data: data, encoding: .utf8)
