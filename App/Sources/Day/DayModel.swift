@@ -62,10 +62,6 @@ final class DayModel {
         editing = nil
     }
 
-    func record(for entry: Entry) -> Record? {
-        app.record(entry.name)
-    }
-
     func isComplete(_ d: DailyDocument) -> Bool {
         d.isAllComplete { self.app.record($0.name) }
     }

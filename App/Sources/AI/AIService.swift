@@ -87,8 +87,7 @@ final class AIService {
 
     var resolvedImageModel: String {
         if let m = settings.imageModel, !m.isEmpty { return m }
-        let candidates = models.filter { $0.hasPrefix("gpt-image-") && $0.range(of: #"\d{4}-\d{2}-\d{2}"#, options: .regularExpression) == nil && !$0.contains("mini") }
-        let plain = candidates.filter { $0.range(of: #"^gpt-image-\d+(\.\d+)?$"#, options: .regularExpression) != nil }
+        let plain = models.filter { $0.range(of: #"^gpt-image-\d+(\.\d+)?$"#, options: .regularExpression) != nil }
         return plain.max { ModelChooser.versionKey($0).lexicographicallyPrecedes(ModelChooser.versionKey($1)) } ?? settings.preset.fallbackImageModel
     }
 
@@ -100,11 +99,15 @@ final class AIService {
     func refreshModels() async {
         guard let client = client() else { return }
         if let list = try? await client.models(), !list.isEmpty {
-            models = list.sorted()
-            app.settings.prefs.modelCache[cacheKey] = models
+            storeModels(list)
         } else {
             models = app.settings.prefs.modelCache[cacheKey] ?? []
         }
+    }
+
+    private func storeModels(_ list: [String]) {
+        models = list.sorted()
+        app.settings.prefs.modelCache[cacheKey] = models
     }
 
     func testConnection() async {
@@ -117,10 +120,7 @@ final class AIService {
         }
         do {
             let list = try await client.models()
-            if !list.isEmpty {
-                models = list.sorted()
-                app.settings.prefs.modelCache[cacheKey] = models
-            }
+            if !list.isEmpty { storeModels(list) }
             try await client.ping(model: resolvedModel)
             testResult = .ok
         } catch let error as AIError {
