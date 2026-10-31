@@ -138,11 +138,6 @@ final class AppModel {
         revision += 1
     }
 
-    func writeDaily(_ date: String, _ doc: DailyDocument) throws {
-        try vault.write(Vault.dailyPath(date), doc.text)
-        revision += 1
-    }
-
     func menuNamesInVault() -> Set<String> {
         Set(menus.map { $0.name.lowercased() })
     }
