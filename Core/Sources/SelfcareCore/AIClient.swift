@@ -390,10 +390,11 @@ public enum ModelChooser {
         return matches.max { versionKey($0).lexicographicallyPrecedes(versionKey($1)) } ?? fallback
     }
 
+    private static let versionRegex = try! NSRegularExpression(pattern: #"\d+(?:\.\d+)?"#)
+
     public static func versionKey(_ id: String) -> [Double] {
-        let regex = try! NSRegularExpression(pattern: #"\d+(?:\.\d+)?"#)
         let ns = id as NSString
-        let nums = regex.matches(in: id, range: NSRange(location: 0, length: ns.length)).compactMap { Double(ns.substring(with: $0.range)) }
+        let nums = versionRegex.matches(in: id, range: NSRange(location: 0, length: ns.length)).compactMap { Double(ns.substring(with: $0.range)) }
         return nums + [-Double(id.count)]
     }
 }
