@@ -52,8 +52,14 @@ struct AISettingsView: View {
                 .disabled(ai.apiKey.isEmpty || ai.testing)
                 .buttonStyle(keyEdited ? AnyPrimitiveButtonStyle(.borderedProminent) : AnyPrimitiveButtonStyle(.automatic))
                 if let result = ai.testResult {
-                    Label(result.message, systemImage: result == .ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                        .foregroundStyle(result == .ok ? Color.accentColor : .orange)
+                    switch result {
+                    case .success:
+                        Label("Connected", systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(Color.accentColor)
+                    case let .failure(error):
+                        Label(error.localizedDescription, systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                    }
                 }
             }
             Section("Model") {
