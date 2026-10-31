@@ -81,9 +81,11 @@ final class AgentRunner {
     }
 
     func trimContext() throws {
-        guard estimated() > contextLimit * 3 / 4 else { return }
+        var total = estimated()
+        guard total > contextLimit * 3 / 4 else { return }
         let lastUser = messages.lastIndex { $0.role == .user && !$0.hidden } ?? messages.count
         for i in messages.indices where i < lastUser {
+            let before = messages[i].estimatedTokens
             if messages[i].role == .tool && !messages[i].omitted {
                 messages[i].omitted = true
             }
@@ -91,7 +93,8 @@ final class AgentRunner {
                 messages[i].images = []
                 messages[i].text = "[Omitted images]"
             }
-            if estimated() <= contextLimit * 6 / 10 { break }
+            total += messages[i].estimatedTokens - before
+            if total <= contextLimit * 6 / 10 { break }
         }
         onChange(messages)
         if estimated() > contextLimit { throw AgentError.contextFull }
