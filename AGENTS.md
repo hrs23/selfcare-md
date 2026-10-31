@@ -1,1 +1,1 @@
-This repository is public and self-contained: English only, made-up examples, no secrets, personal data, internal URLs or references to other repositories.
+This repository is public and self-contained: documentation and code comments in English, made-up examples, no secrets, personal data, internal URLs or references to other repositories. Localized app content (such as `App/Resources/Packs/ja`) may be in its own language.

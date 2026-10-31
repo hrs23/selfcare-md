@@ -250,10 +250,6 @@ public struct Value: Hashable, Sendable {
         Value(ordered.filter { fields.contains($0.field) })
     }
 
-    public func withFields(_ fields: [Field], units: UnitPreferences) -> Value {
-        Value(Field.sorted(fields).map { quantities[$0] ?? .zero($0, units: units) })
-    }
-
     public func converted(to units: UnitPreferences) -> Value {
         Value(ordered.map { $0.converted(to: units) })
     }

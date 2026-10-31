@@ -19,7 +19,6 @@ public struct MenuFile: Sendable, Hashable, Identifiable {
 
     public var hasProblem: Bool { !problems.isEmpty }
     public var body: String { file.body }
-    public var usesFields: Bool { record != .avoid }
 
     public init(name: String, text: String, appleHealthTypes: Set<String>) {
         self.name = name
