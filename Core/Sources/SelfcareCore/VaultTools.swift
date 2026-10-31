@@ -88,7 +88,7 @@ public final class VaultTools: @unchecked Sendable {
             let old = (try? vault.read(path)) ?? ""
             var new = old
             if let o = args["old_string"] as? String, let n = args["new_string"] as? String, !o.isEmpty {
-                new = (args["replace_all"] as? Bool) == true ? old.replacingOccurrences(of: o, with: n) : Self.replaceFirst(old, o, n)
+                new = Self.replace(old, o, n, all: (args["replace_all"] as? Bool) == true)
             }
             return ToolPermission(title: "Edit", path: path, detail: LineDiff.render(old: old, new: new), isDiff: true)
         case "write":
@@ -108,7 +108,8 @@ public final class VaultTools: @unchecked Sendable {
         }
     }
 
-    static func replaceFirst(_ s: String, _ old: String, _ new: String) -> String {
+    static func replace(_ s: String, _ old: String, _ new: String, all: Bool) -> String {
+        if all { return s.replacingOccurrences(of: old, with: new) }
         guard let r = s.range(of: old) else { return s }
         return s.replacingCharacters(in: r, with: new)
     }
@@ -176,7 +177,7 @@ public final class VaultTools: @unchecked Sendable {
             guard count > 0 else { throw ToolError.message("old_string not found in \(path)") }
             let all = (args["replace_all"] as? Bool) == true
             guard count == 1 || all else { throw ToolError.message("old_string matches \(count) times; add more context or set replace_all") }
-            let updated = all ? text.replacingOccurrences(of: old, with: new) : Self.replaceFirst(text, old, new)
+            let updated = Self.replace(text, old, new, all: all)
             try vault.writeRaw(path, updated.hasSuffix("\n") ? updated : updated + "\n")
             return .text("Edited \(path)")
         case "write":
