@@ -20,24 +20,6 @@ struct QuickRun {
     var canUndo: Bool { !running && !originals.isEmpty }
 }
 
-enum ConnectionResult: Equatable {
-    case ok
-    case invalidKey
-    case unreachable(String)
-    case modelUnavailable(String)
-    case other(String)
-
-    var message: String {
-        switch self {
-        case .ok: "Connected"
-        case .invalidKey: "The API key is invalid"
-        case let .unreachable(m): "Cannot connect: \(m)"
-        case let .modelUnavailable(m): "The model is not available: \(m)"
-        case let .other(m): m
-        }
-    }
-}
-
 @Observable
 final class AIService {
     unowned let app: AppModel
@@ -46,7 +28,7 @@ final class AIService {
     var conversations: [Conversation] = []
     var models: [String] = []
     var testing = false
-    var testResult: ConnectionResult?
+    var testResult: Result<Void, Error>?
 
     init(model: AppModel) {
         app = model
@@ -115,23 +97,16 @@ final class AIService {
         defer { testing = false }
         testResult = nil
         guard let client = client() else {
-            testResult = .invalidKey
+            testResult = .failure(AIError.invalidKey)
             return
         }
         do {
             let list = try await client.models()
             if !list.isEmpty { storeModels(list) }
             try await client.ping(model: resolvedModel)
-            testResult = .ok
-        } catch let error as AIError {
-            switch error {
-            case .invalidKey: testResult = .invalidKey
-            case let .unreachable(m): testResult = .unreachable(m)
-            case let .modelUnavailable(m): testResult = .modelUnavailable(m)
-            default: testResult = .other(error.localizedDescription)
-            }
+            testResult = .success(())
         } catch {
-            testResult = .other(error.localizedDescription)
+            testResult = .failure(error)
         }
     }
 
