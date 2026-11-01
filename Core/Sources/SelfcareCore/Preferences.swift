@@ -116,12 +116,25 @@ public struct Preferences: Codable, Hashable, Sendable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let d = Preferences()
         units = c.decode(.units, default: d.units)
-        enabledPacks = c.decode(.enabledPacks, default: d.enabledPacks)
+        enabledPacks = c.decode(.enabledPacks, default: d.enabledPacks).map(Self.migratingPackIDs)
         health = c.decode(.health, default: d.health)
         ai = c.decode(.ai, default: d.ai)
         timerCounts = c.decode(.timerCounts, default: d.timerCounts)
         lastActiveDay = c.decode(.lastActiveDay, default: d.lastActiveDay)
         modelCache = c.decode(.modelCache, default: d.modelCache)
+    }
+
+    static let renamedPacks = [
+        "bundled:en/Anytime Machines": "bundled:en/Gym Machines",
+        "bundled:ja/エニタイム マシン": "bundled:ja/ジムのマシン",
+    ]
+
+    static func migratingPackIDs(_ ids: [String]) -> [String] {
+        var result: [String] = []
+        for id in ids.map({ renamedPacks[$0] ?? $0 }) where !result.contains(id) {
+            result.append(id)
+        }
+        return result
     }
 
     public static func load(from url: URL) -> (preferences: Preferences, canSave: Bool) {

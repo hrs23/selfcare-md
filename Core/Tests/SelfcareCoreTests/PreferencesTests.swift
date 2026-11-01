@@ -33,6 +33,13 @@ struct PreferencesTests {
         #expect(p.units.distance == .mi)
     }
 
+    @Test func renamedPackStaysEnabled() throws {
+        let p = try decode(#"{"enabledPacks":["bundled:en/Habits","bundled:en/Anytime Machines","bundled:ja/エニタイム マシン"]}"#)
+        #expect(p.enabledPacks == ["bundled:en/Habits", "bundled:en/Gym Machines", "bundled:ja/ジムのマシン"])
+        let both = try decode(#"{"enabledPacks":["bundled:en/Gym Machines","bundled:en/Anytime Machines"]}"#)
+        #expect(both.enabledPacks == ["bundled:en/Gym Machines"])
+    }
+
     @Test func roundTrip() throws {
         var p = Preferences()
         p.ai.preset = .google
