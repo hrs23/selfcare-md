@@ -65,13 +65,18 @@ final class DayModel {
         d.isAllComplete { self.app.record($0.name) }
     }
 
-    private func diskText() -> String? {
-        try? app.vault.read(path)
+    private func diskText() -> String?? {
+        do {
+            return .some(try app.vault.readIfExists(path))
+        } catch {
+            app.alert = error.localizedDescription
+            return nil
+        }
     }
 
     @discardableResult
     func mutate(completing: Bool = false, snapshot: Bool = true, _ change: (inout DailyDocument) -> Void) -> Bool {
-        let before = diskText()
+        guard let before = diskText() else { return false }
         if before.map({ DailyDocument(text: $0).text }) != doc?.text {
             load()
             return false
@@ -105,15 +110,13 @@ final class DayModel {
     }
 
     func undo() {
-        guard let target = undoStack.popLast() else { return }
-        let current = diskText()
+        guard let current = diskText(), let target = undoStack.popLast() else { return }
         restore(target)
         redoStack.append(current)
     }
 
     func redo() {
-        guard let target = redoStack.popLast() else { return }
-        let current = diskText()
+        guard let current = diskText(), let target = redoStack.popLast() else { return }
         restore(target)
         undoStack.append(current)
     }
@@ -216,7 +219,7 @@ final class DayModel {
     }
 
     func saveMemo(_ memo: String) {
-        let before = diskText()
+        guard let before = diskText() else { return }
         var working: DailyDocument
         if let before {
             working = DailyDocument(text: before)

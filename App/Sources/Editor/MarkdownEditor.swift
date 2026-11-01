@@ -14,6 +14,7 @@ struct MarkdownEditorView: View {
     @State private var confirmLeave = false
     @State private var saveError: String?
     @State private var notice: String?
+    @State private var readError: String?
 
     var dirty: Bool { text != original }
 
@@ -21,7 +22,13 @@ struct MarkdownEditorView: View {
         CodeEditor(text: $text, menuNames: app.menus.map(\.name), marks: marks)
             .ignoresSafeArea(.container, edges: .bottom)
             .safeAreaInset(edge: .top) {
-                if externalChange {
+                if let readError {
+                    Label(readError, systemImage: "exclamationmark.triangle.fill")
+                        .font(.callout)
+                        .frame(maxWidth: .infinity)
+                        .padding(10)
+                        .background(.bar)
+                } else if externalChange {
                     HStack {
                         Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                         Text("Changed outside").font(.callout)
@@ -55,7 +62,7 @@ struct MarkdownEditorView: View {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }.disabled(!dirty)
+                    Button("Save") { save() }.disabled(!dirty || readError != nil)
                 }
             }
             .confirmationDialog("Unsaved changes", isPresented: $confirmLeave, titleVisibility: .visible) {
@@ -110,7 +117,14 @@ struct MarkdownEditorView: View {
     }
 
     func diskText() -> String? {
-        try? app.vault.read(path)
+        do {
+            let disk = try app.vault.readIfExists(path)
+            readError = nil
+            return disk
+        } catch {
+            readError = error.localizedDescription
+            return nil
+        }
     }
 
     func defaultText() -> String {
@@ -141,7 +155,7 @@ struct MarkdownEditorView: View {
 
     func reload(_ disk: String?) {
         baseline = disk
-        let current = disk ?? defaultText()
+        let current = disk ?? (readError == nil ? defaultText() : "")
         text = current
         original = current
         externalChange = false
@@ -149,6 +163,7 @@ struct MarkdownEditorView: View {
 
     @discardableResult
     func save() -> Bool {
+        guard readError == nil else { return false }
         do {
             try app.vault.write(path, text)
             let saved = diskText() ?? text

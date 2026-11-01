@@ -103,9 +103,8 @@ final class AppModel {
         tab = .ai
     }
 
-    func template() -> DailyDocument? {
-        guard let text = try? vault.read(Vault.templatePath) else { return nil }
-        return DailyDocument(text: text, kind: .template)
+    func template() throws -> DailyDocument? {
+        try vault.readIfExists(Vault.templatePath).map { DailyDocument(text: $0, kind: .template) }
     }
 
     func loadDaily(_ date: String) -> (doc: DailyDocument?, unreadable: Bool) {
@@ -117,7 +116,7 @@ final class AppModel {
 
     func newDaily(_ date: String) -> DailyDocument {
         if date == today() {
-            return DailyCopy.newDaily(date: date, template: template(), record: record)
+            return DailyCopy.newDaily(date: date, template: try? template(), record: record)
         }
         return DailyDocument.new(date: date)
     }
@@ -146,7 +145,7 @@ final class AppModel {
             try vault.renameMenu(from: original.name, to: draft.name)
         }
         let path = Vault.menuPath(draft.name)
-        let current = (try? vault.read(path)).map { MarkdownFile.parse($0) } ?? original.file
+        let current = try vault.readIfExists(path).map { MarkdownFile.parse($0) } ?? original.file
         try vault.write(path, draft.text(updating: current))
         vaultChanged()
     }

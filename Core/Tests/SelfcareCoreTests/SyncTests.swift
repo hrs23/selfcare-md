@@ -236,6 +236,16 @@ struct PackAndToolTests {
         #expect(vault.list("menus", recursive: false) == ["menus/Squat.md"])
     }
 
+    @Test func readIfExists() throws {
+        let vault = tempVault()
+        try vault.write("menus/A.md", "a")
+        try vault.writeData("menus/B.md", Data([0xff, 0xfe]))
+        #expect(try vault.readIfExists("menus/A.md") == "a\n")
+        #expect(try vault.readIfExists("menus/C.md") == nil)
+        #expect(throws: VaultError.notUTF8("menus/B.md")) { try vault.readIfExists("menus/B.md") }
+        #expect(throws: VaultError.outsideVault("../x.md")) { try vault.readIfExists("../x.md") }
+    }
+
     @Test func renameUpdatesLinks() throws {
         let vault = tempVault()
         try vault.write("menus/Squat.md", "---\nrecord: sets\nfields: [reps]\n---\n")
