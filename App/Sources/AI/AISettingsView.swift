@@ -4,7 +4,6 @@ import SwiftUI
 struct AISettingsView: View {
     @Environment(AppModel.self) private var app
     @State private var key = ""
-    @State private var keyEdited = false
 
     var ai: AIService { app.ai }
 
@@ -31,12 +30,10 @@ struct AISettingsView: View {
                         guard new != ai.apiKey else { return }
                         ai.apiKey = new.trimmingCharacters(in: .whitespacesAndNewlines)
                         ai.testResult = nil
-                        keyEdited = true
                     }
             }
             Section {
                 Button {
-                    keyEdited = false
                     Task { await ai.testConnection() }
                 } label: {
                     HStack {
@@ -46,7 +43,6 @@ struct AISettingsView: View {
                     }
                 }
                 .disabled(ai.apiKey.isEmpty || ai.testing)
-                .buttonStyle(keyEdited ? AnyPrimitiveButtonStyle(.borderedProminent) : AnyPrimitiveButtonStyle(.automatic))
                 switch ai.testResult {
                 case .success:
                     Label("Connected", systemImage: "checkmark.circle.fill")
@@ -105,17 +101,5 @@ struct AISettingsView: View {
             key = ai.apiKey
             Task { await ai.refreshModels() }
         }
-    }
-}
-
-struct AnyPrimitiveButtonStyle: PrimitiveButtonStyle {
-    private let make: (Configuration) -> AnyView
-
-    init<S: PrimitiveButtonStyle>(_ style: S) {
-        make = { AnyView(style.makeBody(configuration: $0)) }
-    }
-
-    func makeBody(configuration: Configuration) -> some View {
-        make(configuration)
     }
 }
