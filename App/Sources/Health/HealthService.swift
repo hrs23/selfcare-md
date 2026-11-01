@@ -204,8 +204,9 @@ final class HealthService {
                     rangeProgress = Double(done) / Double(total)
                     day = chunkEnd
                 }
+            } catch is CancellationError {
             } catch {
-                lastError = error.localizedDescription
+                if !Task.isCancelled { lastError = error.localizedDescription }
             }
             rangeProgress = nil
             rangeTask = nil

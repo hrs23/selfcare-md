@@ -94,6 +94,7 @@ struct HealthSettingsView: View {
                 Section("Import a date range") {
                     DatePicker("From", selection: $start, displayedComponents: .date)
                     DatePicker("To", selection: $end, in: start..., displayedComponents: .date)
+                        .onChange(of: start) { if end < start { end = start } }
                     if let progress = health.rangeProgress {
                         ProgressView(value: progress)
                         Button("Stop", role: .destructive) { health.cancelRangeImport() }
