@@ -259,15 +259,21 @@ public enum WikiLinks {
 }
 
 public enum DayDate {
+    static func gregorian(_ calendar: Calendar) -> Calendar {
+        var g = Calendar(identifier: .gregorian)
+        g.timeZone = calendar.timeZone
+        return g
+    }
+
     public static func string(_ date: Date, calendar: Calendar = .current) -> String {
-        let c = calendar.dateComponents([.year, .month, .day], from: date)
+        let c = gregorian(calendar).dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
     }
 
     public static func date(_ string: String, calendar: Calendar = .current) -> Date? {
         let parts = string.split(separator: "-").compactMap { Int($0) }
         guard parts.count == 3 else { return nil }
-        return calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
+        return gregorian(calendar).date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
     }
 
     public static func isValid(_ string: String) -> Bool {
@@ -276,7 +282,7 @@ public enum DayDate {
     }
 
     public static func adding(_ days: Int, to string: String, calendar: Calendar = .current) -> String {
-        guard let d = date(string, calendar: calendar), let n = calendar.date(byAdding: .day, value: days, to: d) else { return string }
+        guard let d = date(string, calendar: calendar), let n = gregorian(calendar).date(byAdding: .day, value: days, to: d) else { return string }
         return self.string(n, calendar: calendar)
     }
 }
