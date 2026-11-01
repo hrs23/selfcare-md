@@ -73,7 +73,7 @@ struct EntryRow: View {
                 StatusIcon(state: state)
             }
             .buttonStyle(.borderless)
-            .disabled(imported || (missing && !imported) || menu?.hasProblem == true)
+            .disabled(imported || missing || menu?.hasProblem == true)
             VStack(alignment: .leading, spacing: 2) {
                 EntryName(entry: entry, imported: imported)
                 if !entry.valueText.isEmpty {

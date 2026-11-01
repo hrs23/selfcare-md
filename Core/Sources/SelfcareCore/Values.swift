@@ -237,13 +237,7 @@ public struct Value: Hashable, Sendable {
 
     public subscript(field: Field) -> Quantity? {
         get { quantities[field] }
-        set {
-            if let newValue {
-                quantities[field] = newValue
-            } else {
-                quantities[field] = nil
-            }
-        }
+        set { quantities[field] = newValue }
     }
 
     public func restricted(to fields: [Field]) -> Value {
@@ -284,7 +278,6 @@ public enum ValueParser {
         if token.isEmpty { return nil }
         if token.contains(":") { return clock(token) }
         if token.contains("/") { return pressure(token) }
-        var numberEnd = token.startIndex
         var sawDigit = false
         var sawDot = false
         var index = token.startIndex
@@ -300,7 +293,7 @@ public enum ValueParser {
             }
             index = token.index(after: index)
         }
-        numberEnd = index
+        let numberEnd = index
         guard sawDigit else { return nil }
         let numberText = String(token[token.startIndex..<numberEnd])
         guard numberText.last != ".", let number = Double(numberText) else { return nil }

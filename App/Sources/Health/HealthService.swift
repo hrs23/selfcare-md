@@ -257,8 +257,9 @@ final class HealthService {
             for r in group.sorted(by: { ($0.uuid ?? "") < ($1.uuid ?? "") }) {
                 placement.place(r, into: &doc)
             }
-            if doc.text != before || result.doc == nil && doc.text != before {
-                try? app.vault.write(Vault.dailyPath(date), doc.text)
+            let text = doc.text
+            if text != before {
+                try? app.vault.write(Vault.dailyPath(date), text)
                 changed = true
             }
         }

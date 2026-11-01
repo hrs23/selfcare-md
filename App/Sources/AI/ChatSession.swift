@@ -46,8 +46,7 @@ final class ChatSession {
                 body += "\n\n[Attached file not found: \(path)]"
             }
         }
-        var message = ChatMessage(role: .user, text: body, images: images, attachments: attachments)
-        message.text = body
+        let message = ChatMessage(role: .user, text: body, images: images, attachments: attachments)
         if conversation.title.isEmpty {
             conversation.title = String((text.isEmpty ? attachments.joined(separator: ", ") : text).prefix(60))
         }
@@ -95,10 +94,7 @@ final class ChatSession {
             } catch {
                 self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             }
-            if let p = self.permission {
-                self.permission = nil
-                p.continuation.resume(returning: false)
-            }
+            self.answer(false)
             self.conversation.messages = runner.messages
             self.cleanupEmptyAssistant()
             self.running = false
@@ -116,10 +112,7 @@ final class ChatSession {
 
     func stop() {
         task?.cancel()
-        if let p = permission {
-            permission = nil
-            p.continuation.resume(returning: false)
-        }
+        answer(false)
     }
 
     func answer(_ allow: Bool) {

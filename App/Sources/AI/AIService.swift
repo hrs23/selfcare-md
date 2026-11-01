@@ -219,13 +219,11 @@ final class AIService {
         quickTask = Task {
             do {
                 try await runner.run()
-                quick?.running = false
             } catch is CancellationError {
-                quick?.running = false
             } catch {
-                quick?.running = false
                 quick?.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             }
+            quick?.running = false
             quick?.originals = recorder.snapshot
             if quick?.originals.isEmpty == true && quick?.error == nil {
                 quick = nil
