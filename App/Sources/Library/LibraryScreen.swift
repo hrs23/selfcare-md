@@ -54,7 +54,8 @@ struct LibraryScreen: View {
     }
 
     func export() {
-        let name = exportName.trimmingCharacters(in: .whitespaces).isEmpty ? "My Menus" : exportName.trimmingCharacters(in: .whitespaces)
+        let trimmed = exportName.trimmingCharacters(in: .whitespaces)
+        let name = trimmed.isEmpty ? "My Menus" : trimmed
         do {
             let data = try PackInstaller.export(name: name, menus: selection.sorted(), vault: app.vault)
             let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(name).zip")

@@ -1,7 +1,7 @@
 import SelfcareCore
 import SwiftUI
 
-enum MenuSort: String, CaseIterable {
+enum MenuSort {
     case recent, name
 }
 
@@ -129,7 +129,7 @@ struct MenuListView: View {
                         app.ai.runQuick(.libraryCreate, target: "library", date: app.today(), input: term)
                         search = ""
                     } label: {
-                        Label("Create Menu with AI", systemImage: "wand.and.sparkles")
+                        Label(QuickKind.libraryCreate.label, systemImage: "wand.and.sparkles")
                     }
                     .disabled(app.ai.quickRunning)
                 }

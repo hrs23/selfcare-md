@@ -314,7 +314,7 @@ struct ConflictResolveView: View {
                 Menu("Resolve") {
                     Button("Keep iPhone version") { resolve(.local) }
                     Button("Keep server version") { resolve(.remote) }
-                    if isText && mode == 2 {
+                    if mode == 2 {
                         Button("Save edit") { resolve(.merged(Data(VaultText.normalized(merged).utf8))) }
                     }
                 }

@@ -145,10 +145,10 @@ struct MenuDetailView: View {
         Button { newName = menu.name; renaming = true } label: { Label("Rename", systemImage: "character.cursor.ibeam") }
         Button { app.show(.markdown(Vault.menuPath(menu.name))) } label: { Label("Edit Markdown", systemImage: "chevron.left.forwardslash.chevron.right") }
         Divider()
-        Button { app.ai.runQuick(.menuTidy, target: Vault.menuPath(menu.name), date: app.today()) } label: { Label("Tidy up with AI", systemImage: "wand.and.sparkles") }
+        Button { app.ai.runQuick(.menuTidy, target: Vault.menuPath(menu.name), date: app.today()) } label: { Label(QuickKind.menuTidy.label, systemImage: "wand.and.sparkles") }
             .disabled(app.ai.quickRunning)
         if app.ai.imageGenerationAvailable && menu.thumbnailReference == nil {
-            Button { app.ai.runQuick(.menuImage, target: Vault.menuPath(menu.name), date: app.today()) } label: { Label("Create image", systemImage: "photo") }
+            Button { app.ai.runQuick(.menuImage, target: Vault.menuPath(menu.name), date: app.today()) } label: { Label(QuickKind.menuImage.label, systemImage: "photo") }
                 .disabled(app.ai.quickRunning)
         }
         Button { app.openChat(attachments: [Vault.menuPath(menu.name)], text: "Help me with the form, the weight and alternatives for this Menu.") } label: { Label("Chat about this Menu", systemImage: "bubble.left.and.text.bubble.right") }
@@ -215,19 +215,15 @@ struct MenuSummary: View {
                     Text(menu.fields.map(\.label).joined(separator: ", "))
                 }
             }
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
             if let type = menu.appleHealth {
                 Label(app.packs.appleName(type), systemImage: "heart.fill")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
             }
             if !menu.tags.isEmpty {
                 Text(menu.tags.map { "#" + $0 }.joined(separator: " "))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
             }
         }
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
     }
 }
 

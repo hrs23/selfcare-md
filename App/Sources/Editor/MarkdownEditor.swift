@@ -67,11 +67,7 @@ struct MarkdownEditorView: View {
                     dismiss()
                 }
             }
-            .alert("Cannot save", isPresented: Binding(get: { saveError != nil }, set: { if !$0 { saveError = nil } })) {
-                Button("OK") {}
-            } message: {
-                Text(saveError ?? "")
-            }
+            .errorAlert("Cannot save", message: $saveError)
             .onAppear {
                 guard !loaded else { return }
                 loaded = true
