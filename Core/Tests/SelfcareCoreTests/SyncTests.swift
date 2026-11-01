@@ -211,6 +211,10 @@ struct PackAndToolTests {
         #expect(!Glob.matches(r, "daily/2026-10-01.md"))
         let all = try Glob.regex("**/*.tcx")
         #expect(Glob.matches(all, "workouts/a.tcx") && Glob.matches(all, "a.tcx"))
+        let braces = try Glob.regex("{a,b}.md,c")
+        #expect(!Glob.matches(braces, "a.md.bak"))
+        #expect(Glob.matches(braces, "a.md,c"))
+        #expect(Glob.matches(try Glob.regex("x{a,b}"), "xa"))
     }
 
     @Test func modelChooser() {
