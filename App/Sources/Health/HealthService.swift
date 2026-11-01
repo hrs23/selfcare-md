@@ -156,10 +156,9 @@ final class HealthService {
                 }
             }
             let applied = apply(records)
-            for w in workouts { await exportTCX(w) }
-            guard applied else { return }
             for (key, anchor) in anchors { saveAnchor(anchor, key: key) }
-            lastError = nil
+            if applied { lastError = nil }
+            for w in workouts { await exportTCX(w) }
         } catch {
             lastError = error.localizedDescription
         }
@@ -250,8 +249,9 @@ final class HealthService {
 
     @discardableResult
     func apply(_ records: [HealthRecord]) -> Bool {
-        guard !records.isEmpty else { return true }
-        let result = app.placement().apply(records, vault: app.vault) { app.newDaily($0) }
+        guard !records.isEmpty || !settings.retry.isEmpty else { return true }
+        let (result, retry) = app.placement().apply(records, retrying: settings.retry, vault: app.vault) { app.newDaily($0) }
+        settings.retry = retry
         if !result.written.isEmpty { app.vaultChanged() }
         guard result.failed.isEmpty else {
             lastError = result.failed.sorted { $0.key < $1.key }.map(\.value).joined(separator: "\n")

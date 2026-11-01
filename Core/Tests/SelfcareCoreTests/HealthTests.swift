@@ -131,6 +131,36 @@ struct HealthPlacementTests {
         #expect(Set(result.failed.keys) == ["2026-09-01", "2026-09-02"])
     }
 
+    @Test func failedDaysAreRetried() throws {
+        let vault = tempVault()
+        let placement = HealthPlacement(menus: [], catalog: catalog, recentMenu: { _ in nil })
+        try vault.writeData("daily/2026-09-01.md", Data([0xff, 0xfe]))
+        let stuck = walk("2026-09-01")
+        let first = placement.apply([stuck, walk("2026-09-02")], retrying: [], vault: vault) { DailyDocument.new(date: $0) }
+        #expect(first.result.written == ["2026-09-02"])
+        #expect(first.retry == [stuck])
+
+        var newer = stuck
+        newer.quantities = [.duration(900)]
+        let second = placement.apply([newer], retrying: first.retry, vault: vault) { DailyDocument.new(date: $0) }
+        #expect(second.retry == [newer])
+
+        try vault.delete("daily/2026-09-01.md")
+        let third = placement.apply([walk("2026-09-03")], retrying: second.retry, vault: vault) { DailyDocument.new(date: $0) }
+        #expect(third.result.written == ["2026-09-01", "2026-09-03"])
+        #expect(third.retry.isEmpty)
+        #expect(try vault.read("daily/2026-09-01.md").contains("15:00"))
+    }
+
+    @Test func retryListSurvivesPreferences() throws {
+        var prefs = Preferences()
+        prefs.health.retry = [walk("2026-09-01"), run]
+        let decoded = try JSONDecoder().decode(Preferences.self, from: JSONEncoder().encode(prefs))
+        #expect(decoded.health.retry == prefs.health.retry)
+        let old = try JSONDecoder().decode(HealthSettings.self, from: Data(#"{"autoImport":true}"#.utf8))
+        #expect(old.autoImport && old.retry.isEmpty)
+    }
+
     @Test func workoutSplitOrder() {
         let t = Date(timeIntervalSince1970: 1_790_000_000)
         func spans(_ n: Int, offset: Double) -> [DateInterval] {

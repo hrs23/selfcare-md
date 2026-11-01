@@ -88,7 +88,7 @@ public struct UnitPreferences: Sendable, Codable, Hashable {
     }
 }
 
-public enum Quantity: Hashable, Sendable {
+public enum Quantity: Hashable, Sendable, Codable {
     case weight(Double, WeightUnit)
     case reps(Int)
     case distance(Double, DistanceUnit)
