@@ -1,6 +1,6 @@
 # selfcare.md
 
-Local-first self-care log (workouts, habits, health) for iPhone. Your records are plain Markdown files that you own and can sync to WebDAV or other storage.
+Local-first self-care log (workouts, habits, health) for iPhone. Your records are plain Markdown files that you own and can sync to WebDAV or S3-compatible storage.
 
 ## Build
 
@@ -12,6 +12,8 @@ Requirements: Xcode 26 (Swift 6.2) and [XcodeGen](https://github.com/yonaskolb/X
 - The WebDAV integration test runs only when `SELFCARE_WEBDAV_URL` is set (with `SELFCARE_WEBDAV_USER` and `SELFCARE_WEBDAV_PASSWORD`).
 
 ## Vault
+
+The vault is the app's folder, shown in the Files app as On My iPhone › selfcare.md › selfcare.
 
 - `daily/YYYY-MM-DD.md`: one page per day
 - `menus/<name>.md`: one Menu per file
