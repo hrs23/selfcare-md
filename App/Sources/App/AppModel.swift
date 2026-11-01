@@ -71,7 +71,7 @@ final class AppModel {
     func reloadMenus() {
         let types = packs.appleTypes
         menus = vault.menuNames().map { name in
-            MenuFile(name: name, text: (try? vault.read(Vault.menuPath(name))) ?? "---\nrecord: [unreadable]\n---\n", appleHealthTypes: types)
+            MenuFile(name: name, vault: vault, appleHealthTypes: types)
         }
     }
 

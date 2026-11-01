@@ -163,6 +163,15 @@ struct MenuTests {
         #expect(MenuDraft(menu: m).text(updating: m.file) == text)
     }
 
+    @Test func nonUTF8Menu() throws {
+        let vault = tempVault()
+        try vault.writeData("menus/X.md", Data([0xff, 0xfe]))
+        try vault.write("menus/Y.md", "---\nrecord: sets\nfields: [reps]\n---\n")
+        #expect(MenuFile(name: "X", vault: vault, appleHealthTypes: types).problems == ["Not UTF-8: menus/X.md"])
+        let y = MenuFile(name: "Y", vault: vault, appleHealthTypes: types)
+        #expect(y.record == .sets && y.problems.isEmpty)
+    }
+
     @Test func names() {
         #expect(MenuName.validate("Squat") == nil)
         #expect(MenuName.validate("") != nil)

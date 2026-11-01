@@ -111,6 +111,18 @@ public struct MenuFile: Sendable, Hashable, Identifiable {
         self.problems = problems
     }
 
+    public init(name: String, vault: Vault, appleHealthTypes: Set<String>) {
+        let text: String
+        do {
+            text = try vault.read(Vault.menuPath(name))
+        } catch {
+            self.init(name: name, text: "", appleHealthTypes: appleHealthTypes)
+            problems = [error.localizedDescription]
+            return
+        }
+        self.init(name: name, text: text, appleHealthTypes: appleHealthTypes)
+    }
+
     public var text: String { file.text }
 
     public var imageReferences: [String] {
