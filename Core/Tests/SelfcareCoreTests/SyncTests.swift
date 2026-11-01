@@ -342,6 +342,22 @@ struct PackAndToolTests {
         #expect(try Zip.read(exported).map(\.path) == ["Out/menus/A.md"])
     }
 
+    @Test func nonUTF8PackMenuIsAProblem() throws {
+        let data = Zip.write([
+            ZipEntry(path: "P/menus/A.md", data: Data("---\nrecord: check\n---\n".utf8)),
+            ZipEntry(path: "P/menus/B.md", data: Data([0xFF, 0xFE, 0x00])),
+        ])
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let pack = Pack(id: "P", name: "P", root: try PackInstaller.importZip(data, suggestedName: "P.zip", into: dir), isBundled: false, language: nil)
+        let menus = pack.menus(appleHealthTypes: [])
+        #expect(menus.map(\.name) == ["A", "B"])
+        #expect(!menus[0].hasProblem)
+        #expect(menus[1].problems == ["Not UTF-8: menus/B.md"])
+        let vault = tempVault()
+        #expect(throws: VaultError.notUTF8("menus/B.md")) { try PackInstaller.copy(menus: ["B"], from: pack, to: vault) }
+        #expect(!vault.exists("menus/B.md"))
+    }
+
     @Test func copyReplacesOnlyWhenAsked() throws {
         let pack = try importPack("P", image: 1)
         let vault = tempVault()

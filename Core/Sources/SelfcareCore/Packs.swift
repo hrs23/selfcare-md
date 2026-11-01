@@ -39,13 +39,22 @@ public struct Pack: Sendable, Hashable, Identifiable {
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
     }
 
-    public func menuText(_ name: String) -> String? {
-        try? String(contentsOf: root.appendingPathComponent("menus/\(name).md"), encoding: .utf8)
+    public func menuText(_ name: String) throws -> String {
+        let path = "menus/\(name).md"
+        let data = try Data(contentsOf: root.appendingPathComponent(path))
+        guard let text = String(data: data, encoding: .utf8) else { throw VaultError.notUTF8(path) }
+        return text
     }
 
     public func menus(appleHealthTypes: Set<String>) -> [MenuFile] {
-        menuNames().compactMap { name in
-            menuText(name).map { MenuFile(name: name, text: $0, appleHealthTypes: appleHealthTypes) }
+        menuNames().map { name in
+            do {
+                return MenuFile(name: name, text: try menuText(name), appleHealthTypes: appleHealthTypes)
+            } catch {
+                var menu = MenuFile(name: name, text: "", appleHealthTypes: appleHealthTypes)
+                menu.problems = [error.localizedDescription]
+                return menu
+            }
         }
     }
 
@@ -101,7 +110,7 @@ public enum PackInstaller {
     public static func copy(menus names: [String], from pack: Pack, to vault: Vault, replacing: Bool = false) throws {
         let packFiles = pack.files()
         for name in names {
-            guard let text = pack.menuText(name) else { continue }
+            let text = try pack.menuText(name)
             let existing = vault.menuFileName(for: name)
             if existing != nil && !replacing { continue }
             let target = Vault.menuPath(existing ?? name)
