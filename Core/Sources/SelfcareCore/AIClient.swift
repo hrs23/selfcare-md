@@ -126,7 +126,6 @@ public enum AIError: Error, LocalizedError, Equatable {
 public enum StreamEvent: Sendable {
     case text(String)
     case toolCalls([ToolCall])
-    case finished(String?)
 }
 
 public struct AIEndpoint: Sendable, Hashable {
@@ -304,7 +303,6 @@ public final class ChatClient: @unchecked Sendable {
             throw classify(status: http.statusCode, body: text)
         }
         var accumulator = ToolCallAccumulator()
-        var finish: String?
         for try await line in bytes.lines {
             try Task.checkCancellation()
             guard line.hasPrefix("data:") else { continue }
@@ -323,11 +321,9 @@ public final class ChatClient: @unchecked Sendable {
                     accumulator.add(calls)
                 }
             }
-            if let f = choice["finish_reason"] as? String { finish = f }
         }
         let calls = accumulator.calls
         if !calls.isEmpty { continuation.yield(.toolCalls(calls)) }
-        continuation.yield(.finished(finish))
     }
 
     public func generateImage(model: String, prompt: String) async throws -> Data {

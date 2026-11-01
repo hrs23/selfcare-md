@@ -32,7 +32,6 @@ final class DayModel {
     }
 
     func load() {
-        loadedRevision = app.revision
         if isToday { app.ensureTodayCopied() }
         let result = app.loadDaily(date)
         doc = result.doc
@@ -60,10 +59,6 @@ final class DayModel {
         undoStack = []
         redoStack = []
         editing = nil
-    }
-
-    func record(for entry: Entry) -> Record? {
-        app.record(entry.name)
     }
 
     func isComplete(_ d: DailyDocument) -> Bool {

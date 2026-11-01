@@ -10,7 +10,6 @@ public struct VaultProblem: Sendable, Hashable, Identifiable {
     public var id: String { path }
     public var path: String
     public var message: String
-    public var isFileProblem: Bool
 }
 
 public final class VaultIndex: @unchecked Sendable {
@@ -107,27 +106,27 @@ public final class VaultIndex: @unchecked Sendable {
     public func problems(_ vault: Vault, menus: [MenuFile]) -> [VaultProblem] {
         var result: [VaultProblem] = []
         for m in menus where m.hasProblem {
-            result.append(VaultProblem(path: Vault.menuPath(m.name), message: m.problems.joined(separator: ", "), isFileProblem: true))
+            result.append(VaultProblem(path: Vault.menuPath(m.name), message: m.problems.joined(separator: ", ")))
         }
         for (date, doc) in dailies(vault) {
             if let p = doc.fileProblem {
-                result.append(VaultProblem(path: Vault.dailyPath(date), message: p, isFileProblem: true))
+                result.append(VaultProblem(path: Vault.dailyPath(date), message: p))
             } else if doc.hasLineProblems {
-                result.append(VaultProblem(path: Vault.dailyPath(date), message: "Lines with problems", isFileProblem: false))
+                result.append(VaultProblem(path: Vault.dailyPath(date), message: "Lines with problems"))
             }
         }
         for date in vault.dailyDates() where (try? vault.read(Vault.dailyPath(date))) == nil {
-            result.append(VaultProblem(path: Vault.dailyPath(date), message: "Not UTF-8", isFileProblem: true))
+            result.append(VaultProblem(path: Vault.dailyPath(date), message: "Not UTF-8"))
         }
         if let text = try? vault.read(Vault.templatePath) {
             let doc = DailyDocument(text: text, kind: .template)
             if let p = doc.fileProblem {
-                result.append(VaultProblem(path: Vault.templatePath, message: p, isFileProblem: true))
+                result.append(VaultProblem(path: Vault.templatePath, message: p))
             } else if doc.hasLineProblems {
-                result.append(VaultProblem(path: Vault.templatePath, message: "Lines with problems", isFileProblem: false))
+                result.append(VaultProblem(path: Vault.templatePath, message: "Lines with problems"))
             }
         } else if vault.exists(Vault.templatePath) {
-            result.append(VaultProblem(path: Vault.templatePath, message: "Not UTF-8", isFileProblem: true))
+            result.append(VaultProblem(path: Vault.templatePath, message: "Not UTF-8"))
         }
         return result.sorted { $0.path < $1.path }
     }

@@ -92,15 +92,13 @@ final class AppModel {
         return m.record
     }
 
-    func show(_ route: Route, in tab: AppTab? = nil) {
-        let target = tab ?? self.tab
-        switch target {
+    func show(_ route: Route) {
+        switch tab {
         case .day: dayPath.append(route)
         case .library: libraryPath.append(route)
         case .ai: aiPath.append(route)
         case .settings: settingsPath.append(route)
         }
-        if tab != nil { self.tab = target }
     }
 
     func openChat(attachments: [String], text: String) {
@@ -138,24 +136,13 @@ final class AppModel {
         revision += 1
     }
 
-    func writeDaily(_ date: String, _ doc: DailyDocument) throws {
-        try vault.write(Vault.dailyPath(date), doc.text)
-        revision += 1
-    }
-
     func menuNamesInVault() -> Set<String> {
         Set(menus.map { $0.name.lowercased() })
     }
 
-    func createMenu(_ draft: MenuDraft, initial: Value? = nil) throws {
+    func createMenu(_ draft: MenuDraft) throws {
         try vault.validateNewName(draft.name)
-        var text = draft.text(updating: nil)
-        if let initial, !initial.isEmpty {
-            var file = MarkdownFile.parse(text)
-            file.frontmatter?.set("initial", .scalar(initial.text))
-            text = file.text
-        }
-        try vault.write(Vault.menuPath(draft.name), text)
+        try vault.write(Vault.menuPath(draft.name), draft.text(updating: nil))
         vaultChanged()
     }
 

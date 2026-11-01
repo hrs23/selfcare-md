@@ -4,7 +4,6 @@ import Testing
 
 final class MemoryProvider: SyncProvider, @unchecked Sendable {
     var files: [String: Data] = [:]
-    var counter = 0
 
     func list() async throws -> [RemoteItem] {
         files.map { RemoteItem(path: $0.key, version: SyncHash.of($0.value)) }

@@ -270,7 +270,6 @@ final class MultistatusParser: NSObject, XMLParserDelegate {
         var etag: String?
         var modified: String?
         var length: String?
-        var ok = true
     }
 
     let data: Data

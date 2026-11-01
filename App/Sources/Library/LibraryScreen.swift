@@ -12,7 +12,7 @@ struct LibraryScreen: View {
     var body: some View {
         @Bindable var app = app
         NavigationStack(path: $app.libraryPath) {
-            MenuListView(picking: false, includePacks: false, filter: nil, onPick: { menu in
+            MenuListView(includePacks: false, filter: nil, onPick: { menu in
                 app.show(.menu(menu.name))
             }, onCreate: { name in
                 app.show(.newMenu(name))

@@ -115,8 +115,6 @@ final class AgentRunner {
                     case let .toolCalls(calls):
                         messages[index].toolCalls = calls
                         onChange(messages)
-                    case .finished:
-                        break
                     }
                 }
             } catch AIError.imagesUnsupported where !imageRetry {
