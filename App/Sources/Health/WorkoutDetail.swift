@@ -115,8 +115,7 @@ struct WorkoutDetailView: View {
         workout = w
         route = await app.health.locations(w).map(\.coordinate)
         heartRate = await app.health.samples(.heartRate, w, unit: .count().unitDivided(by: .minute()))
-        var intervals = (w.workoutEvents ?? []).filter { $0.type == .lap }.map(\.dateInterval)
-        if intervals.isEmpty { intervals = HealthService.intervals(w) }
+        let intervals = HealthService.split(w)?.intervals ?? []
         let dist = await app.health.distanceSamples(w)
         laps = intervals.enumerated().map { i, interval in
             let meters = dist.filter { $0.end > interval.start && $0.end <= interval.end }.reduce(0) { $0 + $1.value }

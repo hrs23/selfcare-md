@@ -365,26 +365,28 @@ final class HealthService {
         let hr = w.statistics(for: HKQuantityType(.heartRate))?.averageQuantity()?.doubleValue(for: .count().unitDivided(by: .minute()))
         let whole = workoutQuantities(duration: w.duration, meters: distance(of: w.allStatistics), heartRate: hr)
         var segments: [[Quantity]] = []
-        let activities = w.workoutActivities
-        if activities.count > 1 {
-            for a in activities {
-                let ahr = a.statistics(for: HKQuantityType(.heartRate))?.averageQuantity()?.doubleValue(for: .count().unitDivided(by: .minute()))
-                segments.append(workoutQuantities(duration: a.duration, meters: distance(of: a.allStatistics), heartRate: ahr))
-            }
-        } else {
-            let intervals = Self.intervals(w)
-            for i in intervals {
-                segments.append(await intervalQuantities(w, i))
+        if let split = Self.split(w) {
+            if split.source == .activities {
+                for a in w.workoutActivities {
+                    let ahr = a.statistics(for: HKQuantityType(.heartRate))?.averageQuantity()?.doubleValue(for: .count().unitDivided(by: .minute()))
+                    segments.append(workoutQuantities(duration: a.duration, meters: distance(of: a.allStatistics), heartRate: ahr))
+                }
+            } else {
+                for i in split.intervals {
+                    segments.append(await intervalQuantities(w, i))
+                }
             }
         }
         return HealthRecord(type: type, uuid: w.uuid.uuidString, date: DayDate.string(w.endDate), quantities: whole, segments: segments)
     }
 
-    static func intervals(_ w: HKWorkout) -> [DateInterval] {
+    static func split(_ w: HKWorkout) -> WorkoutSplit? {
         let events = w.workoutEvents ?? []
-        let segments = events.filter { $0.type == .segment }.map(\.dateInterval)
-        if !segments.isEmpty { return segments }
-        return events.filter { $0.type == .lap }.map(\.dateInterval)
+        return WorkoutSplit.pick(
+            laps: events.filter { $0.type == .lap }.map(\.dateInterval),
+            segments: events.filter { $0.type == .segment }.map(\.dateInterval),
+            activities: w.workoutActivities.map { DateInterval(start: $0.startDate, end: max($0.endDate ?? $0.startDate, $0.startDate)) }
+        )
     }
 
     private func intervalQuantities(_ w: HKWorkout, _ interval: DateInterval) async -> [Quantity] {
@@ -457,11 +459,7 @@ final class HealthService {
         let sport = TCX.sport(for: type)
         let cadence = sport == "Biking" ? await samples(.cyclingCadence, w, unit: .count().unitDivided(by: .minute())) : []
         let locs = await locations(w)
-        var laps = (w.workoutEvents ?? []).filter { $0.type == .lap }.map(\.dateInterval)
-        if laps.isEmpty { laps = (w.workoutEvents ?? []).filter { $0.type == .segment }.map(\.dateInterval) }
-        if laps.isEmpty && w.workoutActivities.count > 1 {
-            laps = w.workoutActivities.map { DateInterval(start: $0.startDate, end: $0.endDate ?? $0.startDate) }
-        }
+        let laps = Self.split(w)?.intervals ?? []
         let calories = w.statistics(for: HKQuantityType(.activeEnergyBurned))?.sumQuantity()?.doubleValue(for: .kilocalorie())
         let input = TCXInput(
             sport: sport, start: w.startDate, end: w.endDate, laps: laps, calories: calories,
