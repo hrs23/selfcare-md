@@ -33,8 +33,7 @@ final class AIService {
     init(model: AppModel) {
         app = model
         loadConversations()
-        models = settings.model.map { [$0] } ?? []
-        if let cached = app.settings.prefs.modelCache[cacheKey] { models = cached }
+        models = app.settings.prefs.modelCache[cacheKey] ?? settings.model.map { [$0] } ?? []
     }
 
     var settings: AISettings {
@@ -164,15 +163,10 @@ final class AIService {
         let recorder = WriteRecorder(vault: vault)
         let allowed: @Sendable (String) -> Bool
         switch kind {
-        case .dayPlan, .menuTidy:
+        case .dayPlan, .menuTidy, .menuImage:
+            let allowsGenerated = kind == .menuImage
             allowed = { path in
-                guard path == target else { return false }
-                recorder.record(path)
-                return true
-            }
-        case .menuImage:
-            allowed = { path in
-                guard path == target || path.hasPrefix("media/generated/") else { return false }
+                guard path == target || allowsGenerated && path.hasPrefix("media/generated/") else { return false }
                 recorder.record(path)
                 return true
             }

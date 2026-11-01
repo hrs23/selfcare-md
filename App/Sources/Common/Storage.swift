@@ -72,19 +72,13 @@ enum BuildInfo {
         return "\(v) (\(b))"
     }
 
-    static var isDebug: Bool {
+    static var showsDebugTools: Bool {
         #if DEBUG
         true
         #else
-        false
+        Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
         #endif
     }
-
-    static var isTestFlight: Bool {
-        Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
-    }
-
-    static var showsDebugTools: Bool { isDebug || isTestFlight }
 
     static var debugOpenAIKey: String? {
         let key = Bundle.main.object(forInfoDictionaryKey: "SelfcareDebugOpenAIKey") as? String
