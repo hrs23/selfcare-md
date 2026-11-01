@@ -26,7 +26,7 @@ struct ValueTests {
         ("97.7°F", "97.7°F"),
     ])
     func roundTrip(input: String, expected: String) throws {
-        let v = try ValueParser.parse(input).get()
+        let v = try #require(ValueParser.parse(input))
         #expect(v.text == expected)
     }
 
@@ -44,12 +44,13 @@ struct ValueTests {
         ("", ""),
     ])
     func lenientReading(input: String, expected: String) throws {
-        #expect(try ValueParser.parse(input).get().text == expected)
+        let v = try #require(ValueParser.parse(input))
+        #expect(v.text == expected)
     }
 
     @Test(arguments: ["10.5", "10 furlongs", "-5", "-3km", "30kg × 40kg", "hello", "1:5", "30kg ×", "heavy"])
     func unreadable(input: String) {
-        #expect((try? ValueParser.parse(input).get()) == nil)
+        #expect(ValueParser.parse(input) == nil)
     }
 
     @Test func conversion() {

@@ -85,9 +85,9 @@ public struct MenuFile: Sendable, Hashable, Identifiable {
             }
             thumbnail = fm["thumbnail"]?.scalar.flatMap { $0.isEmpty ? nil : $0 }
             if let s = fm["initial"]?.scalar {
-                initial = ValueParser.value(s)
+                initial = ValueParser.parse(s)
             } else if let l = fm["initial"]?.list, l.count == 1 {
-                initial = ValueParser.value(l[0])
+                initial = ValueParser.parse(l[0])
             }
         }
         if record == .avoid {
