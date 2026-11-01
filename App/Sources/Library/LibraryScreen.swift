@@ -43,7 +43,7 @@ struct LibraryScreen: View {
             }
             .navigationDestination(for: Route.self) { RouteView(route: $0) }
             .alert("Pack name", isPresented: $askingName) {
-                TextField("Name", text: $exportName)
+                TextField("My Menus", text: $exportName)
                 Button("Export") { export() }
                 Button("Cancel", role: .cancel) {}
             }
