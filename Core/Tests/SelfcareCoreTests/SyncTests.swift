@@ -300,6 +300,17 @@ struct PackAndToolTests {
         #expect(try Zip.read(data, maxEntrySize: 600, maxTotalSize: 1200).count == 2)
     }
 
+    @Test func exportRespectsImportLimits() throws {
+        let vault = tempVault()
+        try vault.write("menus/A.md", "---\nrecord: check\nthumbnail: ../media/a.png\n---\n")
+        try vault.writeData("media/a.png", Data(count: 600))
+        try vault.write("menus/B.md", "---\nrecord: check\n---\n")
+        #expect(throws: ZipError.tooLarge) { try PackInstaller.export(name: "P", menus: ["A"], vault: vault, maxEntrySize: 500, maxTotalSize: 2000) }
+        #expect(throws: ZipError.tooLarge) { try PackInstaller.export(name: "P", menus: ["A", "B"], vault: vault, maxEntrySize: 1000, maxTotalSize: 620) }
+        let data = try PackInstaller.export(name: "P", menus: ["A", "B"], vault: vault, maxEntrySize: 1000, maxTotalSize: 2000)
+        #expect(try Zip.read(data, maxEntrySize: 1000, maxTotalSize: 2000).count == 3)
+    }
+
     @Test func rejectsUnsafeZip() {
         let data = Zip.write([ZipEntry(path: "../evil/menus/A.md", data: Data("x".utf8))])
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

@@ -208,20 +208,30 @@ public enum PackInstaller {
     }
 
     public static func export(name: String, menus: [String], vault: Vault) throws -> Data {
+        try export(name: name, menus: menus, vault: vault, maxEntrySize: Zip.maxEntrySize, maxTotalSize: Zip.maxTotalSize)
+    }
+
+    static func export(name: String, menus: [String], vault: Vault, maxEntrySize: Int, maxTotalSize: Int) throws -> Data {
         let packName = cleanName(name)
         var entries: [ZipEntry] = []
         var added = Set<String>()
+        var total = 0
+        func append(_ path: String, _ data: Data) throws {
+            total += data.count
+            guard data.count <= maxEntrySize, total <= maxTotalSize else { throw ZipError.tooLarge }
+            entries.append(ZipEntry(path: "\(packName)/\(path)", data: data))
+        }
         let files = vault.list()
         for menu in menus {
             let path = Vault.menuPath(menu)
             let data = try vault.readData(path)
-            entries.append(ZipEntry(path: "\(packName)/\(path)", data: data))
+            try append(path, data)
             let text = String(decoding: data, as: UTF8.self)
             let file = MenuFile(name: menu, text: text, appleHealthTypes: [])
             for ref in file.imageReferences {
                 guard let source = ImageResolver.resolve(ref, fromDirectory: "menus", files: files), VaultTools.isImage(source), !added.contains(source) else { continue }
                 added.insert(source)
-                entries.append(ZipEntry(path: "\(packName)/\(source)", data: try vault.readData(source)))
+                try append(source, try vault.readData(source))
             }
         }
         return Zip.write(entries)
