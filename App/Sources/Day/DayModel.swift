@@ -9,8 +9,7 @@ final class DayModel {
     private(set) var doc: DailyDocument?
     private(set) var unreadable = false
     private(set) var previous: [Int: Value] = [:]
-    private(set) var undoStack: [String?] = []
-    private(set) var redoStack: [String?] = []
+    private(set) var history = TextHistory()
     private(set) var celebration = 0
     private(set) var completionPulse = 0
     var editing: Int?
@@ -24,8 +23,8 @@ final class DayModel {
 
     var path: String { Vault.dailyPath(date) }
     var isToday: Bool { date == app.today() }
-    var canUndo: Bool { !undoStack.isEmpty }
-    var canRedo: Bool { !redoStack.isEmpty }
+    var canUndo: Bool { history.canUndo }
+    var canRedo: Bool { history.canRedo }
 
     func reloadIfNeeded() {
         if loadedRevision != app.revision { load() }
@@ -56,8 +55,7 @@ final class DayModel {
     }
 
     func clearHistory() {
-        undoStack = []
-        redoStack = []
+        history.clear()
         editing = nil
     }
 
@@ -86,16 +84,14 @@ final class DayModel {
         let wasComplete = isComplete(working)
         change(&working)
         guard working.text != (before ?? "") else { return false }
+        let after = VaultText.normalized(working.text)
         do {
-            try app.vault.write(path, working.text)
+            try app.vault.writeRaw(path, after)
         } catch {
             app.alert = error.localizedDescription
             return false
         }
-        if snapshot {
-            undoStack.append(before)
-            redoStack = []
-        }
+        history.record(before: before, after: after, merging: !snapshot)
         doc = working
         app.vaultChanged()
         loadedRevision = app.revision
@@ -110,23 +106,26 @@ final class DayModel {
     }
 
     func undo() {
-        guard let current = diskText(), let target = undoStack.popLast() else { return }
-        restore(target)
-        redoStack.append(current)
+        guard let disk = diskText() else { return }
+        restore(history.undo(disk: disk))
     }
 
     func redo() {
-        guard let current = diskText(), let target = redoStack.popLast() else { return }
-        restore(target)
-        undoStack.append(current)
+        guard let disk = diskText() else { return }
+        restore(history.redo(disk: disk))
     }
 
-    private func restore(_ text: String?) {
+    private func restore(_ target: TextHistory.Target?) {
         editing = nil
-        if let text {
-            try? app.vault.writeRaw(path, text)
-        } else {
-            try? app.vault.delete(path)
+        do {
+            switch target {
+            case let .text(text): try app.vault.writeRaw(path, text)
+            case .missing: try app.vault.delete(path)
+            case nil: break
+            }
+        } catch {
+            history.clear()
+            app.alert = error.localizedDescription
         }
         app.vaultChanged()
         load()
