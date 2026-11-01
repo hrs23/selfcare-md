@@ -129,7 +129,7 @@ final class AIService {
         }
     }
 
-    func toolContext(allowedWrite: (@Sendable (String) -> Bool)? = nil) -> ToolContext {
+    func toolContext(allowedWrite: (@Sendable (String) throws -> Bool)? = nil) -> ToolContext {
         let client = self.client()
         let imageModel = resolvedImageModel
         var generator: (@concurrent @Sendable (String) async throws -> Data)?
@@ -167,20 +167,22 @@ final class AIService {
         guard !quickRunning else { return }
         let vault = app.vault
         let recorder = WriteRecorder(vault: vault)
-        let allowed: @Sendable (String) -> Bool
+        let allowed: @Sendable (String) throws -> Bool
         switch kind {
         case .dayPlan, .menuTidy, .menuImage:
             let allowsGenerated = kind == .menuImage
             allowed = { path in
                 guard path == target || allowsGenerated && path.hasPrefix("media/generated/") else { return false }
-                return recorder.record(path)
+                try recorder.record(path)
+                return true
             }
         case .libraryCreate:
             allowed = { path in
                 guard path.hasPrefix("menus/"), path.hasSuffix(".md") else { return false }
                 if recorder.created(path) { return true }
                 guard !vault.exists(path) else { return false }
-                return recorder.record(path)
+                try recorder.record(path)
+                return true
             }
         }
         let extra = settings.quickPrompts[kind.rawValue]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

@@ -461,6 +461,25 @@ struct PackAndToolTests {
         #expect(perm.detail.contains("- hello there") && perm.detail.contains("+ hello you"))
     }
 
+    @Test func unreadableFileIsReportedAndNeverRecorded() async throws {
+        let vault = tempVault()
+        try vault.write("menus/A.md", "mine")
+        let url = try vault.url("menus/A.md")
+        try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: url.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: url.path) }
+        let recorder = WriteRecorder(vault: vault)
+        let ctx = ToolContext(imageGenerator: nil, fetcher: { _ in (Data(), nil) }, allowedWrite: { try recorder.record($0); return true })
+        do {
+            _ = try await VaultTools(vault: vault).execute(ToolCall(id: "1", name: "write", arguments: #"{"path":"menus/A.md","content":"x"}"#), context: ctx)
+            Issue.record()
+        } catch {
+            #expect(error.localizedDescription == "Cannot read menus/A.md, so it was not changed")
+        }
+        #expect(recorder.snapshot.isEmpty)
+        try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: url.path)
+        #expect(try vault.read("menus/A.md") == "mine\n")
+    }
+
     @Test func globLimit() async throws {
         await #expect(processExitsWith: .success) {
             let vault = tempVault()

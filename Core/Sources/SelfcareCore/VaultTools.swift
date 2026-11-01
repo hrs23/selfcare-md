@@ -27,9 +27,9 @@ public struct ToolContext: Sendable {
     public var timeZone: TimeZone
     public var imageGenerator: (@Sendable (String) async throws -> Data)?
     public var fetcher: @Sendable (URL) async throws -> (Data, String?)
-    public var allowedWrite: (@Sendable (String) -> Bool)?
+    public var allowedWrite: (@Sendable (String) throws -> Bool)?
 
-    public init(now: Date = Date(), timeZone: TimeZone = .current, imageGenerator: (@Sendable (String) async throws -> Data)?, fetcher: @escaping @Sendable (URL) async throws -> (Data, String?), allowedWrite: (@Sendable (String) -> Bool)? = nil) {
+    public init(now: Date = Date(), timeZone: TimeZone = .current, imageGenerator: (@Sendable (String) async throws -> Data)?, fetcher: @escaping @Sendable (URL) async throws -> (Data, String?), allowedWrite: (@Sendable (String) throws -> Bool)? = nil) {
         self.now = now
         self.timeZone = timeZone
         self.imageGenerator = imageGenerator
@@ -74,7 +74,7 @@ public final class VaultTools: @unchecked Sendable {
         let clean = try Vault.clean(path)
         guard !clean.isEmpty else { throw ToolError.message("Invalid path") }
         _ = try vault.url(clean)
-        if let allowed = context.allowedWrite, !allowed(clean) {
+        if let allowed = context.allowedWrite, try !allowed(clean) {
             throw ToolError.message("Writing \(clean) is not allowed for this action")
         }
         return clean
