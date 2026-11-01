@@ -82,8 +82,7 @@ public struct HealthPlacement {
                 guard s.problem == nil else { return false }
                 let v = Self.value(rec.quantities, fields: fields(for: e.name, type: rec.type))
                 if v.text == s.valueText && s.checked { return false }
-                doc.lines[s.line] = DailyDocument.setLine(indent: DailyDocument.indent(of: s.raw), checked: true, value: v.text, comment: s.comment)
-                doc.analyze()
+                doc.replace(s.line, DailyDocument.setLine(indent: DailyDocument.indent(of: s.raw), checked: true, value: v.text, comment: s.comment))
                 return true
             }
         }
@@ -94,8 +93,7 @@ public struct HealthPlacement {
             case let .entry(line):
                 guard let e = doc.entry(at: line) else { return false }
                 let v = Self.value(rec.quantities, fields: fields(for: e.name, type: rec.type))
-                doc.lines[line] = DailyDocument.menuLine(checkbox: true, link: e.link, value: v.text, comment: marker.comment)
-                doc.analyze()
+                doc.replace(line, DailyDocument.menuLine(checkbox: true, link: e.link, value: v.text, comment: marker.comment))
                 return true
             case let .set(entryLine, _):
                 var lastEntryLine = entryLine
@@ -103,8 +101,7 @@ public struct HealthPlacement {
                 while index < units.count, case let .set(eLine, sLine)? = candidate(rec.type, in: doc, setsOnly: true) {
                     guard let e = doc.entry(at: eLine), let s = e.sets.first(where: { $0.line == sLine }) else { break }
                     let v = Self.value(units[index], fields: fields(for: e.name, type: rec.type))
-                    doc.lines[sLine] = DailyDocument.setLine(indent: DailyDocument.indent(of: s.raw), checked: true, value: v.text, comment: marker.comment)
-                    doc.analyze()
+                    doc.replace(sLine, DailyDocument.setLine(indent: DailyDocument.indent(of: s.raw), checked: true, value: v.text, comment: marker.comment))
                     lastEntryLine = eLine
                     index += 1
                 }
