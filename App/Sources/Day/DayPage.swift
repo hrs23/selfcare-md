@@ -39,6 +39,8 @@ struct DayPage: View {
                 FileProblemRow(path: model.path, message: "The file is not UTF-8")
             } else if let problem = model.doc?.fileProblem {
                 FileProblemRow(path: model.path, message: problem)
+            } else if let error = model.templateError {
+                FileProblemRow(path: Vault.templatePath, message: error)
             } else {
                 let rows = self.rows
                 if !rows.isEmpty {

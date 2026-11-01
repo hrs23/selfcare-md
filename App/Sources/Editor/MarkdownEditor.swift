@@ -15,6 +15,7 @@ struct MarkdownEditorView: View {
     @State private var saveError: String?
     @State private var notice: String?
     @State private var readError: String?
+    @State private var templateError: String?
 
     var dirty: Bool { text != original }
 
@@ -22,8 +23,8 @@ struct MarkdownEditorView: View {
         CodeEditor(text: $text, menuNames: app.menus.map(\.name), marks: marks)
             .ignoresSafeArea(.container, edges: .bottom)
             .safeAreaInset(edge: .top) {
-                if let readError {
-                    Label(readError, systemImage: "exclamationmark.triangle.fill")
+                if let error = readError ?? templateError {
+                    Label(error, systemImage: "exclamationmark.triangle.fill")
                         .font(.callout)
                         .frame(maxWidth: .infinity)
                         .padding(10)
@@ -62,7 +63,7 @@ struct MarkdownEditorView: View {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }.disabled(!dirty || readError != nil)
+                    Button("Save") { save() }.disabled(!dirty || readError != nil || templateError != nil)
                 }
             }
             .confirmationDialog("Unsaved changes", isPresented: $confirmLeave, titleVisibility: .visible) {
@@ -127,10 +128,10 @@ struct MarkdownEditorView: View {
         }
     }
 
-    func defaultText() -> String {
+    func defaultText() throws -> String {
         if path.hasPrefix("daily/"), path.hasSuffix(".md") {
             let date = String((path as NSString).lastPathComponent.dropLast(3))
-            return app.newDaily(date).text
+            return try app.newDaily(date).text
         }
         if path == Vault.templatePath { return "## Selfcare\n\n" }
         return ""
@@ -150,12 +151,18 @@ struct MarkdownEditorView: View {
                     notice = nil
                 }
             }
+        } else if templateError != nil, !dirty {
+            reload(disk)
         }
     }
 
     func reload(_ disk: String?) {
         baseline = disk
-        let current = disk ?? (readError == nil ? defaultText() : "")
+        templateError = nil
+        var current = disk ?? ""
+        if disk == nil, readError == nil {
+            do { current = try defaultText() } catch { templateError = error.localizedDescription }
+        }
         text = current
         original = current
         externalChange = false
@@ -163,7 +170,7 @@ struct MarkdownEditorView: View {
 
     @discardableResult
     func save() -> Bool {
-        guard readError == nil else { return false }
+        guard readError == nil, templateError == nil else { return false }
         do {
             try app.vault.write(path, text)
             let saved = diskText() ?? text

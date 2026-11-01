@@ -57,8 +57,13 @@ struct CopySheet: View {
                     .themed()
                 default:
                     List {
-                        if let t = try? app.template(), t.fileProblem == nil, !t.entries.isEmpty {
-                            preview(t)
+                        switch Result(catching: { try app.template() }) {
+                        case let .success(t):
+                            if let t, t.fileProblem == nil, !t.entries.isEmpty {
+                                preview(t)
+                            }
+                        case let .failure(error):
+                            FileProblemRow(path: Vault.templatePath, message: error.localizedDescription)
                         }
                     }
                     .themed()
@@ -113,12 +118,13 @@ struct ReorderSheet: View {
 struct TemplateEditorView: View {
     @Environment(AppModel.self) private var app
     @State private var doc: DailyDocument?
+    @State private var readError: String?
     @State private var adding = false
     @State private var editMode: EditMode = .inactive
 
     var body: some View {
         List {
-            if let problem = doc?.fileProblem {
+            if let problem = readError ?? doc?.fileProblem {
                 FileProblemRow(path: Vault.templatePath, message: problem)
             } else if let doc {
                 Section {
@@ -155,7 +161,7 @@ struct TemplateEditorView: View {
                     Button("Done") { editMode = .inactive }
                 } else {
                     Button { adding = true } label: { Image(systemName: "plus") }
-                        .disabled(doc?.fileProblem != nil)
+                        .disabled(readError != nil || doc?.fileProblem != nil)
                 }
             }
         }
@@ -169,7 +175,13 @@ struct TemplateEditorView: View {
     }
 
     func load() {
-        doc = (try? app.template()) ?? DailyDocument.newTemplate()
+        do {
+            doc = try app.template() ?? DailyDocument.newTemplate()
+            readError = nil
+        } catch {
+            doc = nil
+            readError = error.localizedDescription
+        }
     }
 
     func mutate(_ change: (inout DailyDocument) -> Void) {
