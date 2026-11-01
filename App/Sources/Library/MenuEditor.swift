@@ -183,15 +183,13 @@ struct MenuEditorView: View {
             let saved = app.menu(draft.name)
             if let onSaved, let saved {
                 onSaved(saved)
-            } else {
-                if original == nil {
-                    replaceTop(with: .menu(draft.name))
-                } else {
-                    if original?.name != draft.name {
-                        app.renameRoutes(old: original!.name, new: draft.name)
-                    }
-                    dismiss()
+            } else if let original {
+                if original.name != draft.name {
+                    app.renameRoutes(old: original.name, new: draft.name)
                 }
+                dismiss()
+            } else {
+                replaceTop(with: .menu(draft.name))
             }
         } catch {
             self.error = error.localizedDescription
