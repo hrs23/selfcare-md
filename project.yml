@@ -44,7 +44,7 @@ targets:
         NSHealthShareUsageDescription: Import your records from Apple Health into your daily pages.
         NSHealthUpdateUsageDescription: Save timer workouts to Apple Health.
         NSCameraUsageDescription: Scan a QR code to set up sync.
-        NSLocalNetworkUsageDescription: Sync with a server on your local network.
+        NSLocalNetworkUsageDescription: Connect to servers on your local network.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
     settings:
