@@ -84,7 +84,7 @@ final class SyncService {
             app.vaultChanged()
         } catch {
             if let engine { state = engine.state }
-            state.lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            state.lastError = error.localizedDescription
             AppFiles.save(state, "sync-state.json")
         }
     }
@@ -100,7 +100,6 @@ final class SyncService {
             app.vaultChanged()
         } catch {
             state = engine.state
-            state.lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
     }
 

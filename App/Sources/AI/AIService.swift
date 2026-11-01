@@ -196,7 +196,7 @@ final class AIService {
                 try await runner.run()
             } catch is CancellationError {
             } catch {
-                quick?.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                quick?.error = error.localizedDescription
             }
             quick?.running = false
             quick?.originals = recorder.snapshot
