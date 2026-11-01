@@ -67,11 +67,13 @@ public struct Frontmatter: Sendable, Hashable {
 
     public static func parse(_ lines: [String]) -> Frontmatter {
         var entries: [Entry] = []
-        for line in lines {
+        let isBlank = { (line: String) in line.trimmingCharacters(in: .whitespaces).isEmpty }
+        let continues = { (line: String) in line.hasPrefix(" ") || line.hasPrefix("\t") || line.hasPrefix("-") }
+        for (index, line) in lines.enumerated() {
+            let next = isBlank(line) ? lines[(index + 1)...].first { !isBlank($0) } : line
             if let key = keyOf(line) {
                 entries.append(.pair(key: key, lines: [line]))
-            } else if case let .pair(key, existing)? = entries.last,
-                      line.hasPrefix(" ") || line.hasPrefix("\t") || line.hasPrefix("-") {
+            } else if case let .pair(key, existing)? = entries.last, let next, continues(next) {
                 entries[entries.count - 1] = .pair(key: key, lines: existing + [line])
             } else {
                 entries.append(.other(line))
