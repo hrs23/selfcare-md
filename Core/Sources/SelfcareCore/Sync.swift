@@ -168,7 +168,7 @@ public final class SyncEngine: @unchecked Sendable {
             let remoteChanged = r != b.remoteVersion
             switch (localChanged, remoteChanged) {
             case (false, false):
-                break
+                continue
             case (true, false):
                 if let l {
                     if let v = try await upload(path) { state.base[path] = SyncBase(localHash: l, remoteVersion: v) } else { needsVersion.append(path); state.base[path] = SyncBase(localHash: l, remoteVersion: "") }
