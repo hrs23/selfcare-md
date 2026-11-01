@@ -463,7 +463,7 @@ public extension DailyDocument {
     }
 
     mutating func moveEntry(from: Int, to: Int) {
-        var es = entries
+        let es = entries
         guard from != to, es.indices.contains(from), to >= 0, to <= es.count else { return }
         let blocks = es.map { Array(lines[$0.line...$0.endLine]) }
         let slots = es.map { ($0.line, $0.endLine) }
@@ -474,7 +474,6 @@ public extension DailyDocument {
             let (start, end) = slots[slot]
             lines.replaceSubrange(start...end, with: blocks[source])
         }
-        es = []
         analyze()
     }
 

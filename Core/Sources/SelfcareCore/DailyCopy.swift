@@ -19,7 +19,7 @@ public enum DailyCopy {
                 }
             }
             let value = importedLine ? "" : (r == .avoid ? "" : e.valueText)
-            let keepComment = importedLine ? nil : e.comment.flatMap { HealthMarker(comment: String($0.dropFirst(4).dropLast(3))) == nil ? $0 : nil }
+            let keepComment = importedLine ? nil : (e.marker == nil ? e.comment : nil)
             var block = [DailyDocument.menuLine(checkbox: checkbox, link: e.link, value: value, comment: keepComment)]
             for s in keptSets {
                 block.append(DailyDocument.setLine(indent: DailyDocument.indent(of: s.raw), checked: false, value: s.valueText, comment: s.comment))
