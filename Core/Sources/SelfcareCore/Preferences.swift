@@ -87,6 +87,7 @@ public struct HealthSettings: Codable, Hashable, Sendable {
     public var enabledTypes: [String]?
     public var requested = false
     public var anchors: [String: Data] = [:]
+    public var retry: [HealthRecord] = []
 
     public init() {}
 
@@ -98,6 +99,7 @@ public struct HealthSettings: Codable, Hashable, Sendable {
         enabledTypes = c.decode(.enabledTypes, default: d.enabledTypes)
         requested = c.decode(.requested, default: d.requested)
         anchors = c.decode(.anchors, default: d.anchors)
+        retry = c.decode(.retry, default: d.retry)
     }
 }
 

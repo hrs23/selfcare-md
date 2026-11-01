@@ -1,6 +1,6 @@
 import Foundation
 
-public struct HealthRecord: Sendable, Hashable {
+public struct HealthRecord: Sendable, Hashable, Codable {
     public var type: String
     public var uuid: String?
     public var date: String
@@ -18,6 +18,10 @@ public struct HealthRecord: Sendable, Hashable {
     public var marker: HealthMarker {
         if let uuid { return .record(uuid) }
         return .aggregate(type)
+    }
+
+    func sameSource(as other: HealthRecord) -> Bool {
+        marker == other.marker && (uuid != nil || date == other.date)
     }
 }
 
@@ -154,6 +158,12 @@ public struct HealthPlacement {
             }
         }
         return true
+    }
+
+    public func apply(_ records: [HealthRecord], retrying retry: [HealthRecord], vault: Vault, newDaily: (String) throws -> DailyDocument) -> (result: HealthApplyResult, retry: [HealthRecord]) {
+        let all = retry.filter { old in !records.contains { $0.sameSource(as: old) } } + records
+        let result = apply(all, vault: vault, newDaily: newDaily)
+        return (result, all.filter { result.failed[$0.date] != nil })
     }
 
     public func apply(_ records: [HealthRecord], vault: Vault, newDaily: (String) throws -> DailyDocument) -> HealthApplyResult {
