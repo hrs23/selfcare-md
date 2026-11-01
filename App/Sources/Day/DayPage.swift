@@ -29,6 +29,7 @@ struct DayPage: View {
     @FocusState private var memoFocused: Bool
     @State private var creating: Entry?
     @State private var reassigning: Entry?
+    @State private var adding = false
 
     var body: some View {
         List {
@@ -51,12 +52,24 @@ struct DayPage: View {
                     }
                 } else if !app.ai.quickRunning(for: model.path) {
                     Section {
-                        Button {
-                            app.ai.runQuick(.dayPlan, target: model.path, date: model.date)
-                        } label: {
-                            Label(QuickKind.dayPlan.label, systemImage: "wand.and.sparkles")
-                                .labelStyle(.titleAndIcon)
-                                .frame(maxWidth: .infinity)
+                        Group {
+                            if app.ai.configured {
+                                Button {
+                                    app.ai.runQuick(.dayPlan, target: model.path, date: model.date)
+                                } label: {
+                                    Label(QuickKind.dayPlan.label, systemImage: "wand.and.sparkles")
+                                        .labelStyle(.titleAndIcon)
+                                        .frame(maxWidth: .infinity)
+                                }
+                            } else {
+                                Button {
+                                    adding = true
+                                } label: {
+                                    Label("Add", systemImage: "plus")
+                                        .labelStyle(.titleAndIcon)
+                                        .frame(maxWidth: .infinity)
+                                }
+                            }
                         }
                         .buttonStyle(.borderedProminent)
                         .listRowBackground(Color.clear)
@@ -98,6 +111,11 @@ struct DayPage: View {
             Button("Create “\(creating?.name ?? "")”") {
                 if let entry = creating { createMenu(for: entry) }
                 creating = nil
+            }
+        }
+        .sheet(isPresented: $adding) {
+            MenuPickerSheet(title: "Add") { menu in
+                model.add(menu: menu)
             }
         }
         .sheet(item: $reassigning) { entry in
