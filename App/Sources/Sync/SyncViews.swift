@@ -100,13 +100,15 @@ struct SyncConnectForm: View {
     @State private var creates: [String] = []
     @State private var loaded = false
 
-    var folderReady: Bool { chosenURL == url }
+    var trimmedURL: String { url.trimmingCharacters(in: .whitespacesAndNewlines) }
 
-    var folderPath: String { URL(string: url)?.path.removingPercentEncoding ?? url }
+    var folderReady: Bool { chosenURL == trimmedURL }
+
+    var folderPath: String { URL(string: trimmedURL)?.path.removingPercentEncoding ?? trimmedURL }
 
     var config: SyncConfig {
         kind == 0
-            ? .webdav(WebDAVConfig(url: url.trimmingCharacters(in: .whitespaces), username: username, password: password))
+            ? .webdav(WebDAVConfig(url: trimmedURL, username: username, password: password))
             : .s3(S3Config(endpoint: endpoint.trimmingCharacters(in: .whitespaces), region: region.trimmingCharacters(in: .whitespaces), bucket: bucket.trimmingCharacters(in: .whitespaces), prefix: prefix.trimmingCharacters(in: .whitespaces), accessKey: accessKey.trimmingCharacters(in: .whitespaces), secret: secret))
     }
 
@@ -129,7 +131,7 @@ struct SyncConnectForm: View {
                 }
                 Section {
                     Button("Choose folder") { Task { await loadFolders() } }
-                        .disabled(url.isEmpty)
+                        .disabled(trimmedURL.isEmpty)
                     if let folders {
                         Button("Use this folder") { Task { await choose("") } }
                         ForEach(folders, id: \.self) { folder in
@@ -174,7 +176,7 @@ struct SyncConnectForm: View {
                     ProgressView()
                 } else {
                     Button("Connect") { Task { await connect() } }
-                        .disabled(kind == 0 ? url.isEmpty || !folderReady : bucket.isEmpty)
+                        .disabled(kind == 0 ? trimmedURL.isEmpty || !folderReady : bucket.isEmpty)
                 }
             }
         }
@@ -190,7 +192,7 @@ struct SyncConnectForm: View {
             if let initial {
                 fill(initial)
                 if case let .webdav(w) = initial {
-                    chosenURL = w.url
+                    chosenURL = trimmedURL
                     Task { await loadCreates() }
                 }
             }
@@ -218,7 +220,7 @@ struct SyncConnectForm: View {
     func loadFolders() async {
         error = nil
         do {
-            let p = try WebDAVProvider(config: WebDAVConfig(url: url, username: username, password: password))
+            let p = try WebDAVProvider(config: WebDAVConfig(url: trimmedURL, username: username, password: password))
             folders = try await p.folders(at: "")
         } catch {
             self.error = error.localizedDescription
@@ -226,7 +228,7 @@ struct SyncConnectForm: View {
     }
 
     func choose(_ folder: String) async {
-        var base = url
+        var base = trimmedURL
         if !base.hasSuffix("/") { base += "/" }
         let encoded = folder.split(separator: "/").map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? String($0) }.joined(separator: "/")
         url = base + encoded + (encoded.isEmpty ? "" : "/")
@@ -238,7 +240,7 @@ struct SyncConnectForm: View {
     func loadCreates() async {
         creates = []
         do {
-            let p = try WebDAVProvider(config: WebDAVConfig(url: url, username: username, password: password))
+            let p = try WebDAVProvider(config: WebDAVConfig(url: trimmedURL, username: username, password: password))
             let remote = Set(try await p.folders(at: ""))
             let local = Set(app.vault.list().compactMap { path -> String? in
                 let parts = path.split(separator: "/")
