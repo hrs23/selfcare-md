@@ -100,7 +100,7 @@ struct DayPage: View {
         }
         .sheet(item: $reassigning) { entry in
             MenuPickerSheet(title: "Change Menu", filter: { menu in
-                menu.record == (app.record(entry.name) ?? catalogRecord(entry) ?? .check) && menu.name != entry.name
+                menu.record == (app.record(entry.name) ?? app.catalogEntry(named: entry.name)?.record ?? .check) && menu.name != entry.name
             }, includePacks: false) { menu in
                 model.reassign(entry, to: menu.name)
             }
@@ -125,10 +125,6 @@ struct DayPage: View {
         }
     }
 
-    private func catalogRecord(_ entry: Entry) -> Record? {
-        app.packs.catalog.values.first { $0.name == entry.name }?.record
-    }
-
     var rows: [DayRow] {
         guard let doc = model.doc else { return [] }
         var rows: [DayRow] = []
@@ -144,7 +140,7 @@ struct DayPage: View {
                     for s in e.sets { rows.append(.problem(s.line, s.raw, nil)) }
                     continue
                 }
-                let record = app.record(e.name) ?? (app.menu(e.name) == nil ? catalogRecord(e) : nil)
+                let record = app.record(e.name) ?? (app.menu(e.name) == nil ? app.catalogEntry(named: e.name)?.record : nil)
                 let setsShape = !e.sets.isEmpty || (e.checkbox == nil && record == .sets)
                 if setsShape {
                     rows.append(.setsHeader(e))
