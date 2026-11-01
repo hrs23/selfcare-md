@@ -145,4 +145,22 @@ struct SyncSessionTests {
         #expect(try vault.read("menus/B.md") == "b\n")
         #expect(p.inner.files["menus/A.md"] == Data("a\n".utf8))
     }
+
+    @Test func massDeletionWaitsForConfirm() async throws {
+        let vault = tempVault()
+        for i in 0..<20 { try vault.write("menus/M\(i).md", "\(i)") }
+        let p = MemoryProvider()
+        let session = makeSession(vault, ["one": p], connectedTo: "one")
+        await session.run(.manual)
+        #expect(p.files.count == 20)
+        p.files = [:]
+        await session.run(.automatic)
+        #expect(session.pendingPreview == SyncPreview(localCount: 0, remoteCount: 0, conflictCount: 0, localDeletions: 20, remoteDeletions: 0))
+        #expect(vault.list("menus").count == 20)
+        await session.run(.automatic)
+        #expect(vault.list("menus").count == 20)
+        await session.confirm()
+        #expect(session.pendingPreview == nil)
+        #expect(vault.list("menus").isEmpty)
+    }
 }

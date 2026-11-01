@@ -201,6 +201,36 @@ struct SyncTests {
         try await engine.sync()
     }
 
+    @Test func massDeletionNeedsConfirmation() async throws {
+        let vault = tempVault()
+        for i in 0..<30 { try vault.write("menus/M\(i).md", "\(i)") }
+        let remote = MemoryProvider()
+        let engine = SyncEngine(vault: vault, provider: remote, state: SyncState(), save: { _ in })
+        try await engine.sync()
+        for i in 0..<16 { remote.files["menus/M\(i).md"] = nil }
+        try vault.write("menus/New.md", "new")
+        await #expect(throws: SyncError.massDeletion(local: 16, remote: 0)) { try await engine.sync() }
+        #expect(vault.list("menus").count == 31)
+        #expect(remote.files["menus/New.md"] == nil)
+        try await engine.sync(allowingMassDeletion: true)
+        #expect(vault.list("menus").count == 15)
+
+        for i in 16..<30 { try vault.delete("menus/M\(i).md") }
+        await #expect(throws: SyncError.massDeletion(local: 0, remote: 14)) { try await engine.sync() }
+        #expect(remote.files.count == 15)
+    }
+
+    @Test func smallDeletionNeedsNoConfirmation() async throws {
+        let vault = tempVault()
+        for i in 0..<12 { try vault.write("menus/M\(i).md", "\(i)") }
+        let remote = MemoryProvider()
+        let engine = SyncEngine(vault: vault, provider: remote, state: SyncState(), save: { _ in })
+        try await engine.sync()
+        for i in 0..<10 { remote.files["menus/M\(i).md"] = nil }
+        try await engine.sync()
+        #expect(vault.list("menus").count == 2)
+    }
+
     @Test func qr() {
         let json = #"{"type":"webdav","url":"https://dav.example.com/files/","username":"u","password":"p"}"#
         #expect(SyncConfig.fromQR(json) == .webdav(WebDAVConfig(url: "https://dav.example.com/files/", username: "u", password: "p")))

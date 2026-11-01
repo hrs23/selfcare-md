@@ -59,6 +59,8 @@ public struct SyncPreview: Sendable, Hashable {
     public var localCount: Int
     public var remoteCount: Int
     public var conflictCount: Int
+    public var localDeletions = 0
+    public var remoteDeletions = 0
 }
 
 public enum SyncHash {
@@ -128,10 +130,10 @@ public final class SyncEngine: @unchecked Sendable {
         try await body()
     }
 
-    public func sync() async throws {
+    public func sync(allowingMassDeletion: Bool = false) async throws {
         try await exclusive {
             do {
-                try await run()
+                try await run(allowingMassDeletion: allowingMassDeletion)
                 state.lastSuccess = Date()
                 state.lastError = skipped.isEmpty ? nil : skipped.joined(separator: "\n")
                 save(state)
@@ -143,7 +145,7 @@ public final class SyncEngine: @unchecked Sendable {
         }
     }
 
-    private func run() async throws {
+    private func run(allowingMassDeletion: Bool) async throws {
         skipped = []
         let remoteItems = try await provider.list().filter { Self.syncable($0.path) }
         var remote: [String: String] = [:]
@@ -155,6 +157,7 @@ public final class SyncEngine: @unchecked Sendable {
         let collisions = caseInsensitiveVolume ? Self.caseCollisions(all) : []
         skipped += collisions.map { "Names differ only by case: " + $0.joined(separator: ", ") }
         let paths = all.subtracting(unreadable).subtracting(collisions.joined()).sorted()
+        if !allowingMassDeletion { try checkDeletions(paths, local: local, remote: remote) }
         for path in paths {
             try Task.checkCancellation()
             let l = local[path]
@@ -233,6 +236,22 @@ public final class SyncEngine: @unchecked Sendable {
             save(state)
         }
         state.hashes = state.hashes.filter { vault.exists($0.key) }
+    }
+
+    private func checkDeletions(_ paths: [String], local: [String: String], remote: [String: String]) throws {
+        var localDeletions = 0
+        var remoteDeletions = 0
+        for path in paths where state.conflicts[path] == nil {
+            guard let b = state.base[path] else { continue }
+            let l = local[path]
+            let r = remote[path]
+            if l == b.localHash && r == nil && l != nil { localDeletions += 1 }
+            if r == b.remoteVersion && l == nil && r != nil { remoteDeletions += 1 }
+        }
+        let limit = max(10, state.base.count / 2)
+        if localDeletions > limit || remoteDeletions > limit {
+            throw SyncError.massDeletion(local: localDeletions, remote: remoteDeletions)
+        }
     }
 
     private var caseInsensitiveVolume: Bool {
