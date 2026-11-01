@@ -21,6 +21,11 @@ public struct Frontmatter: Sendable, Hashable {
     public enum Entry: Sendable, Hashable {
         case pair(key: String, lines: [String])
         case other(String)
+
+        var key: String? {
+            if case let .pair(key, _) = self { return key }
+            return nil
+        }
     }
 
     public var entries: [Entry]
@@ -40,17 +45,11 @@ public struct Frontmatter: Sendable, Hashable {
 
     public mutating func set(_ key: String, _ value: YAMLValue?) {
         guard let value, value != .null else {
-            entries.removeAll {
-                if case let .pair(k, _) = $0 { return k == key }
-                return false
-            }
+            entries.removeAll { $0.key == key }
             return
         }
         let lines = Self.render(key: key, value: value)
-        if let index = entries.firstIndex(where: {
-            if case let .pair(k, _) = $0 { return k == key }
-            return false
-        }) {
+        if let index = entries.firstIndex(where: { $0.key == key }) {
             entries[index] = .pair(key: key, lines: lines)
         } else {
             entries.append(.pair(key: key, lines: lines))
