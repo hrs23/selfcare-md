@@ -137,9 +137,7 @@ public enum TCX {
             xml += "      <Lap StartTime=\"\(time(lap.start))\">\n"
             xml += "        <TotalTimeSeconds>\(num(lap.duration, 1))</TotalTimeSeconds>\n"
             xml += "        <DistanceMeters>\(num(lapDistance, 1))</DistanceMeters>\n"
-            if let calories = int(calories) {
-                xml += "        <Calories>\(calories)</Calories>\n"
-            }
+            xml += "        <Calories>\(int(calories) ?? 0)</Calories>\n"
             if !hr.isEmpty, let average = int(hr.reduce(0, +) / Double(hr.count)), let maximum = int(hr.max() ?? 0) {
                 xml += "        <AverageHeartRateBpm><Value>\(average)</Value></AverageHeartRateBpm>\n"
                 xml += "        <MaximumHeartRateBpm><Value>\(maximum)</Value></MaximumHeartRateBpm>\n"
