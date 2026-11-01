@@ -13,6 +13,10 @@ struct SelfcareApp: App {
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active { model.foreground() }
                 }
+                .task {
+                    await BuildInfo.detectTestFlight()
+                    if BuildInfo.showsDebugTools { model.packs.reload() }
+                }
         }
     }
 }

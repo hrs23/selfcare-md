@@ -1,4 +1,5 @@
 import Foundation
+import StoreKit
 import Security
 import SelfcareCore
 
@@ -76,8 +77,15 @@ enum BuildInfo {
         #if DEBUG
         true
         #else
-        Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
+        isTestFlight
         #endif
+    }
+
+    private(set) static var isTestFlight = false
+
+    static func detectTestFlight() async {
+        guard case let .verified(transaction)? = try? await AppTransaction.shared else { return }
+        isTestFlight = transaction.environment == .sandbox
     }
 
     static var debugOpenAIKey: String? {
