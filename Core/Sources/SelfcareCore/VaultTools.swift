@@ -243,6 +243,7 @@ public enum Glob {
         if p.hasPrefix("./") { p.removeFirst(2) }
         if p.hasPrefix("/") { p.removeFirst() }
         var r = "^"
+        var depth = 0
         var i = p.startIndex
         while i < p.endIndex {
             let c = p[i]
@@ -263,10 +264,12 @@ public enum Glob {
             } else if c == "?" {
                 r += "[^/]"
             } else if c == "{" {
+                depth += 1
                 r += "(?:"
             } else if c == "}" {
+                depth -= 1
                 r += ")"
-            } else if c == ",", p[..<i].contains("{") {
+            } else if c == ",", depth > 0 {
                 r += "|"
             } else {
                 r += NSRegularExpression.escapedPattern(for: String(c))
