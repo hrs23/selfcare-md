@@ -131,13 +131,14 @@ public final class VaultTools: @unchecked Sendable {
             } else {
                 infos.sort { ($0.modified ?? .distantPast) > ($1.modified ?? .distantPast) }
             }
-            let limit = (args["limit"] as? Int) ?? 500
+            let limit = max(0, (args["limit"] as? Int) ?? 500)
             let iso = ISO8601DateFormatter()
             iso.timeZone = context.timeZone
-            let lines = infos.prefix(limit).map { i in
+            var lines = infos.prefix(limit).map { i in
                 "\(i.path)\tcreated \(i.created.map { iso.string(from: $0) } ?? "-")\tmodified \(i.modified.map { iso.string(from: $0) } ?? "-")"
             }
-            return .text(lines.isEmpty ? "No files" : lines.joined(separator: "\n") + (infos.count > limit ? "\n… \(infos.count - limit) more" : ""))
+            if infos.count > limit { lines.append("… \(infos.count - limit) more") }
+            return .text(infos.isEmpty ? "No files" : lines.joined(separator: "\n"))
         case "grep":
             let pattern = try string(args, "pattern")
             let options: NSRegularExpression.Options = (args["ignore_case"] as? Bool) == true ? [.caseInsensitive] : []
