@@ -77,7 +77,7 @@ final class ChatSession {
         running = true
         var messages = conversation.messages.filter { $0.role != .system }
         messages.insert(ChatMessage(role: .system, text: app.ai.systemPrompt()), at: 0)
-        let runner = AgentRunner(client: client, model: app.ai.resolvedModel, tools: VaultTools(vault: app.vault), specs: VaultTools.specs(imageGeneration: app.ai.imageGenerationAvailable), context: app.ai.toolContext(), askPermission: true, messages: messages)
+        let runner = AgentRunner(client: client, model: app.ai.resolvedModel, tools: VaultTools(vault: app.vault), specs: VaultTools.specs(imageGeneration: app.ai.imageGenerationAvailable), context: app.ai.toolContext(), messages: messages)
         runner.permit = { [weak self] call, permission in
             guard let self else { return false }
             return await withCheckedContinuation { continuation in
