@@ -80,8 +80,9 @@ struct MenuEditorView: View {
                             .frame(width: 56, height: 56)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
+                    let hasThumbnail = draft.thumbnail != nil
                     PhotosPicker(selection: $photo, matching: .images) {
-                        Text(draft.thumbnail == nil ? "Choose" : "Change")
+                        Text(hasThumbnail ? "Change" : "Choose")
                     }
                     Spacer()
                     if draft.thumbnail != nil {
