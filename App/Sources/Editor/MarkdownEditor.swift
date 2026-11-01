@@ -26,7 +26,7 @@ struct MarkdownEditorView: View {
                         Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                         Text("Changed outside").font(.callout)
                         Spacer()
-                        Button("Reload") { reload() }
+                        Button("Reload") { reload(diskText()) }
                         Button("Keep mine") {
                             baseline = diskText()
                             externalChange = false
@@ -75,10 +75,7 @@ struct MarkdownEditorView: View {
             .onAppear {
                 guard !loaded else { return }
                 loaded = true
-                baseline = diskText()
-                let initial = baseline ?? defaultText()
-                text = initial
-                original = initial
+                reload(diskText())
             }
             .task {
                 while !Task.isCancelled {
@@ -136,10 +133,7 @@ struct MarkdownEditorView: View {
             if dirty {
                 externalChange = true
             } else {
-                let current = disk ?? defaultText()
-                baseline = disk
-                text = current
-                original = current
+                reload(disk)
                 notice = "Reloaded"
                 Task {
                     try? await Task.sleep(for: .seconds(2))
@@ -149,11 +143,11 @@ struct MarkdownEditorView: View {
         }
     }
 
-    func reload() {
-        baseline = diskText()
-        let disk = baseline ?? defaultText()
-        text = disk
-        original = disk
+    func reload(_ disk: String?) {
+        baseline = disk
+        let current = disk ?? defaultText()
+        text = current
+        original = current
         externalChange = false
     }
 

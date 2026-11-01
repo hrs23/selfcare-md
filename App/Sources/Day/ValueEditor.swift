@@ -174,9 +174,7 @@ struct DirectInput: View {
         let q: Quantity?
         switch field {
         case .duration:
-            if raw.contains(":") {
-                q = ValueParser.value(raw)?[.duration]
-            } else if let minutes = Double(raw) {
+            if !raw.contains(":"), let minutes = Double(raw) {
                 q = .duration(Int((minutes * 60).rounded()))
             } else {
                 q = ValueParser.value(raw)?[.duration]

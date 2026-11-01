@@ -172,8 +172,7 @@ final class AppModel {
     }
 
     func createMenuFromApple(_ type: String, name: String) throws {
-        if let apple = packs.packs.first(where: { $0.id == "bundled:\(packs.deviceLanguage)/\(PackStore.appleName)" }),
-           apple.menuNames().contains(name) {
+        if let apple = packs.applePack, apple.menuNames().contains(name) {
             try copyFromPack(apple, names: [name])
             return
         }

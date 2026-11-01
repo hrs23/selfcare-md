@@ -283,16 +283,8 @@ struct TrendChart: View {
 
     var unitLabel: String {
         switch field {
-        case .weight: units.weight.rawValue
-        case .distance: units.distance.rawValue
         case .duration: "min"
-        case .heartRate: "bpm"
-        case .percent: "%"
-        case .bloodPressure: "mmHg"
-        case .volume: units.volume.rawValue
-        case .energy: "kcal"
-        case .temperature: units.temperature.rawValue
-        case .reps: ""
+        default: Quantity.zero(field, units: units).unitText
         }
     }
 
