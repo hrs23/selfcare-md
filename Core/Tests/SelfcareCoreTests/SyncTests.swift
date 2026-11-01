@@ -78,6 +78,34 @@ struct SyncTests {
         #expect(engine.state.base["~x.md"] == nil)
     }
 
+    @Test func unreadableLocalFileIsNotDeleted() async throws {
+        let vault = tempVault()
+        let remote = MemoryProvider()
+        try vault.write("menus/A.md", "a")
+        try vault.write("menus/B.md", "b")
+        let engine = SyncEngine(vault: vault, provider: remote, state: SyncState(), save: { _ in })
+        try await engine.sync()
+        try vault.write("menus/A.md", "a changed locally")
+        try vault.write("menus/B.md", "b changed locally")
+        remote.files["menus/B.md"] = Data("b changed remotely\n".utf8)
+        let a = try vault.url("menus/A.md").path
+        let b = try vault.url("menus/B.md").path
+        try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: a)
+        try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: b)
+        defer {
+            try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: a)
+            try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: b)
+        }
+        try await engine.sync()
+        #expect(remote.files["menus/A.md"] == Data("a\n".utf8))
+        #expect(remote.files["menus/B.md"] == Data("b changed remotely\n".utf8))
+        #expect(engine.state.base["menus/A.md"] != nil && engine.state.conflicts.isEmpty)
+        try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: a)
+        try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: b)
+        #expect(try vault.read("menus/A.md") == "a changed locally\n")
+        #expect(try vault.read("menus/B.md") == "b changed locally\n")
+    }
+
     @Test func qr() {
         let json = #"{"type":"webdav","url":"https://dav.example.com/files/","username":"u","password":"p"}"#
         #expect(SyncConfig.fromQR(json) == .webdav(WebDAVConfig(url: "https://dav.example.com/files/", username: "u", password: "p")))

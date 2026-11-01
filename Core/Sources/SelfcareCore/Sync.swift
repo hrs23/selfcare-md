@@ -78,28 +78,29 @@ public final class SyncEngine: @unchecked Sendable {
         !path.split(separator: "/").contains { $0.hasPrefix(".") }
     }
 
-    func localFiles() -> [String: String] {
+    func localFiles() -> (hashes: [String: String], unreadable: Set<String>) {
         var result: [String: String] = [:]
+        var unreadable: Set<String> = []
         var cache: [String: LocalHashCache] = [:]
         for path in vault.list() where Self.syncable(path) {
-            guard let info = vault.info(path), let modified = info.modified else { continue }
+            guard let info = vault.info(path), let modified = info.modified else { unreadable.insert(path); continue }
             if let c = state.hashes[path], c.modified == modified, c.size == info.size {
                 result[path] = c.hash
                 cache[path] = c
                 continue
             }
-            guard let data = try? vault.readData(path) else { continue }
+            guard let data = try? vault.readData(path) else { unreadable.insert(path); continue }
             let hash = SyncHash.of(data)
             result[path] = hash
             cache[path] = LocalHashCache(modified: modified, size: info.size, hash: hash)
         }
         state.hashes = cache
-        return result
+        return (result, unreadable)
     }
 
     public func preview() async throws -> SyncPreview {
         let remote = try await provider.list().filter { Self.syncable($0.path) }
-        let local = localFiles()
+        let local = localFiles().hashes
         var conflicts = 0
         for item in remote {
             guard let l = local[item.path] else { continue }
@@ -127,9 +128,10 @@ public final class SyncEngine: @unchecked Sendable {
         let remoteItems = try await provider.list().filter { Self.syncable($0.path) }
         var remote: [String: String] = [:]
         for item in remoteItems { remote[item.path] = item.version }
-        let local = localFiles()
+        let (local, unreadable) = localFiles()
+        skipped += unreadable.sorted().map { "Could not read: \($0)" }
         var needsVersion: [String] = []
-        let paths = Set(remote.keys).union(local.keys).union(state.base.keys).sorted()
+        let paths = Set(remote.keys).union(local.keys).union(state.base.keys).subtracting(unreadable).sorted()
         for path in paths {
             try Task.checkCancellation()
             let l = local[path]
