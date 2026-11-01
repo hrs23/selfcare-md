@@ -60,28 +60,22 @@ final class AgentRunner {
     let tools: VaultTools
     let specs: [ToolSpec]
     let context: ToolContext
-    let askPermission: Bool
-    var permit: (ToolCall, ToolPermission) async -> Bool = { _, _ in true }
+    var permit: ((ToolCall, ToolPermission) async -> Bool)?
     var onChange: ([ChatMessage]) -> Void = { _ in }
     var messages: [ChatMessage]
     var contextLimit = 110_000
 
-    init(client: ChatClient, model: String, tools: VaultTools, specs: [ToolSpec], context: ToolContext, askPermission: Bool, messages: [ChatMessage]) {
+    init(client: ChatClient, model: String, tools: VaultTools, specs: [ToolSpec], context: ToolContext, messages: [ChatMessage]) {
         self.client = client
         self.model = model
         self.tools = tools
         self.specs = specs
         self.context = context
-        self.askPermission = askPermission
         self.messages = messages
     }
 
-    func estimated() -> Int {
-        messages.reduce(0) { $0 + $1.estimatedTokens } + specs.count * 120
-    }
-
     func trimContext() throws {
-        var total = estimated()
+        var total = messages.reduce(0) { $0 + $1.estimatedTokens } + specs.count * 120
         guard total > contextLimit * 3 / 4 else { return }
         let lastUser = messages.lastIndex { $0.role == .user && !$0.hidden } ?? messages.count
         for i in messages.indices where i < lastUser {
@@ -133,7 +127,7 @@ final class AgentRunner {
             for call in calls {
                 try Task.checkCancellation()
                 var result: String
-                if askPermission && VaultTools.writeTools.contains(call.name) {
+                if let permit, VaultTools.writeTools.contains(call.name) {
                     let allowed = await permit(call, tools.permission(call))
                     if !allowed {
                         messages.append(ChatMessage(role: .tool, text: "The user declined this action.", toolCallId: call.id, toolName: call.name))
@@ -165,7 +159,6 @@ final class AgentRunner {
                 onChange(messages)
             }
         }
-        onChange(messages)
     }
 
     private func stripImages() {

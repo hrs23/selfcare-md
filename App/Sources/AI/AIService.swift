@@ -183,7 +183,7 @@ final class AIService {
         var prompt = Self.prompt(kind, target: target, date: date, input: input)
         if !extra.isEmpty { prompt += "\n\nAdditional instructions:\n" + extra }
         let messages = [ChatMessage(role: .system, text: systemPrompt()), ChatMessage(role: .user, text: prompt)]
-        let runner = AgentRunner(client: client, model: resolvedModel, tools: VaultTools(vault: vault), specs: VaultTools.specs(imageGeneration: kind == .menuImage && imageGenerationAvailable), context: toolContext(allowedWrite: allowed), askPermission: false, messages: messages)
+        let runner = AgentRunner(client: client, model: resolvedModel, tools: VaultTools(vault: vault), specs: VaultTools.specs(imageGeneration: kind == .menuImage && imageGenerationAvailable), context: toolContext(allowedWrite: allowed), messages: messages)
         quick = QuickRun(kind: kind, target: target)
         quickTask = Task {
             do {
