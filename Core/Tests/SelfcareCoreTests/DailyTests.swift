@@ -94,6 +94,20 @@ struct DailyTests {
         #expect(doc.text == "# 2026-09-27\n\n## Selfcare\n\n## Memo\n")
     }
 
+    @Test func memoWithoutSelfcare() async {
+        await #expect(processExitsWith: .success) {
+            precondition(DailyDocument(text: "## Memo\nhi").memo == "hi")
+        }
+        await #expect(processExitsWith: .success) {
+            precondition(DailyDocument(text: "## Selfcare\n## Selfcare\n## Memo\nhi\n").memo == "hi")
+        }
+        await #expect(processExitsWith: .success) {
+            var doc = DailyDocument(text: "# d\n")
+            doc.setMemo("note")
+            precondition(doc.memo == "note")
+        }
+    }
+
     @Test func completion() {
         let doc = DailyDocument(text: "## Selfcare\n\n- [[S]]\n  - [x] 10\n- [[Plan]]\n- [[NoSnack]]\n", kind: .template)
         let records: [String: Record] = ["S": .sets, "Plan": .check, "NoSnack": .avoid]
