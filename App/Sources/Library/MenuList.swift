@@ -57,14 +57,16 @@ struct MenuListView: View {
     @State private var lastUsed: [String: String] = [:]
     @State private var expanded: Set<String> = []
 
-    var vaultMenus: [MenuFile] {
+    func matches(_ m: MenuFile) -> Bool {
         let q = search.trimmingCharacters(in: .whitespaces).lowercased()
-        var list = app.menus.filter { m in
-            if let filter, !filter(m) { return false }
-            if !tags.isSubset(of: Set(m.tags)) { return false }
-            if q.isEmpty { return true }
-            return m.name.lowercased().contains(q) || m.tags.contains { $0.lowercased().contains(q) }
-        }
+        if let filter, !filter(m) { return false }
+        if !tags.isSubset(of: Set(m.tags)) { return false }
+        if q.isEmpty { return true }
+        return m.name.lowercased().contains(q) || m.tags.contains { $0.lowercased().contains(q) }
+    }
+
+    var vaultMenus: [MenuFile] {
+        var list = app.menus.filter(matches)
         switch sort {
         case .name:
             list.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
@@ -85,14 +87,7 @@ struct MenuListView: View {
 
     func candidates(_ pack: Pack) -> [MenuFile] {
         let existing = app.menuNamesInVault()
-        let q = search.trimmingCharacters(in: .whitespaces).lowercased()
-        return app.packs.menus(pack).filter { m in
-            if existing.contains(m.name.lowercased()) { return false }
-            if let filter, !filter(m) { return false }
-            if !tags.isSubset(of: Set(m.tags)) { return false }
-            if q.isEmpty { return true }
-            return m.name.lowercased().contains(q) || m.tags.contains { $0.lowercased().contains(q) }
-        }
+        return app.packs.menus(pack).filter { !existing.contains($0.name.lowercased()) && matches($0) }
     }
 
     var allTags: [String] {

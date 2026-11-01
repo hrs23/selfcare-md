@@ -51,22 +51,14 @@ struct CopySheet: View {
                             .datePickerStyle(.graphical)
                             .labelsHidden()
                         if let doc, doc.fileProblem == nil, !doc.entries.isEmpty, date != target {
-                            Section {
-                                ForEach(doc.entries) { e in Text(e.name) }
-                            }
-                            Button("Copy") { copy(doc) }
-                                .frame(maxWidth: .infinity)
+                            preview(doc)
                         }
                     }
                     .themed()
                 default:
                     List {
                         if let t = app.template(), t.fileProblem == nil, !t.entries.isEmpty {
-                            Section {
-                                ForEach(t.entries) { e in Text(e.name) }
-                            }
-                            Button("Copy") { copy(t) }
-                                .frame(maxWidth: .infinity)
+                            preview(t)
                         }
                     }
                     .themed()
@@ -78,6 +70,15 @@ struct CopySheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
             }
         }
+    }
+
+    @ViewBuilder
+    func preview(_ doc: DailyDocument) -> some View {
+        Section {
+            ForEach(doc.entries) { e in Text(e.name) }
+        }
+        Button("Copy") { copy(doc) }
+            .frame(maxWidth: .infinity)
     }
 
     func copy(_ doc: DailyDocument) {

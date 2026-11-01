@@ -43,10 +43,14 @@ final class PackStore {
         buildCatalog()
     }
 
+    var applePack: Pack? {
+        packs.first { $0.id == "bundled:\(deviceLanguage)/\(Self.appleName)" }
+    }
+
     private func buildCatalog() {
         catalog = [:]
         catalogOrder = []
-        guard let apple = packs.first(where: { $0.id == "bundled:\(deviceLanguage)/\(Self.appleName)" }) else { return }
+        guard let apple = applePack else { return }
         let menus = apple.menus(appleHealthTypes: [])
         let workouts = menus.filter { $0.appleHealth?.hasPrefix("HKWorkoutActivityType") == true }
         let others = menus.filter { $0.appleHealth?.hasPrefix("HKWorkoutActivityType") != true }
@@ -86,14 +90,14 @@ final class PackStore {
     }
 
     func importZip(_ data: Data, name: String) throws {
-        let root = try PackInstaller.importZip(data, suggestedName: name, into: AppFiles.importedPacks)
-        try validate(root)
-        reload()
-        if let pack = packs.first(where: { $0.root.standardizedFileURL == root.standardizedFileURL }) { setEnabled(pack, true) }
+        try added(PackInstaller.importZip(data, suggestedName: name, into: AppFiles.importedPacks))
     }
 
     func importFolder(_ url: URL) throws {
-        let root = try PackInstaller.importFolder(url, into: AppFiles.importedPacks)
+        try added(PackInstaller.importFolder(url, into: AppFiles.importedPacks))
+    }
+
+    private func added(_ root: URL) throws {
         try validate(root)
         reload()
         if let pack = packs.first(where: { $0.root.standardizedFileURL == root.standardizedFileURL }) { setEnabled(pack, true) }

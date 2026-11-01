@@ -126,16 +126,8 @@ public enum PackInstaller {
         }
         let (prefix, name) = try packRoot(files.map(\.0), suggestedName: suggestedName)
         let dest = try prepare(directory, name: name)
-        do {
-            for (path, content) in files where prefix.isEmpty || path.hasPrefix(prefix + "/") {
-                let rel = prefix.isEmpty ? path : String(path.dropFirst(prefix.count + 1))
-                let target = dest.appendingPathComponent(rel)
-                try FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try content.write(to: target, options: .atomic)
-            }
-        } catch {
-            try? FileManager.default.removeItem(at: dest.deletingLastPathComponent())
-            throw error
+        try install(files, prefix: prefix, into: dest) { content, target in
+            try content.write(to: target, options: .atomic)
         }
         return dest
     }
@@ -154,18 +146,25 @@ public enum PackInstaller {
         }
         let (prefix, name) = try packRoot(files, suggestedName: folder.lastPathComponent)
         let dest = try prepare(directory, name: name)
+        try install(files.map { ($0, folder.appendingPathComponent($0)) }, prefix: prefix, into: dest) { source, target in
+            try fm.copyItem(at: source, to: target)
+        }
+        return dest
+    }
+
+    private static func install<Source>(_ files: [(String, Source)], prefix: String, into dest: URL, write: (Source, URL) throws -> Void) throws {
+        let fm = FileManager.default
         do {
-            for path in files where prefix.isEmpty || path.hasPrefix(prefix + "/") {
+            for (path, source) in files where prefix.isEmpty || path.hasPrefix(prefix + "/") {
                 let rel = prefix.isEmpty ? path : String(path.dropFirst(prefix.count + 1))
                 let target = dest.appendingPathComponent(rel)
                 try fm.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try fm.copyItem(at: folder.appendingPathComponent(path), to: target)
+                try write(source, target)
             }
         } catch {
             try? fm.removeItem(at: dest.deletingLastPathComponent())
             throw error
         }
-        return dest
     }
 
     static func packRoot(_ paths: [String], suggestedName: String) throws -> (prefix: String, name: String) {

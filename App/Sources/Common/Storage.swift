@@ -44,14 +44,12 @@ enum AppFiles {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("selfcare")
     }
 
-    static var importedPacks: URL {
-        let url = support.appendingPathComponent("Packs")
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        return url
-    }
+    static var importedPacks: URL { directory("Packs") }
 
-    static var conversations: URL {
-        let url = support.appendingPathComponent("Conversations")
+    static var conversations: URL { directory("Conversations") }
+
+    private static func directory(_ name: String) -> URL {
+        let url = support.appendingPathComponent(name)
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
     }

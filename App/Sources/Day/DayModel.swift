@@ -140,8 +140,7 @@ final class DayModel {
             let restricted = prev.restricted(to: fields)
             if !restricted.isEmpty { return restricted }
         }
-        if let initial = menu?.initial { return initial }
-        return Value()
+        return menu?.initial ?? Value()
     }
 
     func complete(_ entry: Entry) {
@@ -169,13 +168,7 @@ final class DayModel {
     }
 
     func addSet(_ entry: Entry) {
-        let menu = app.menu(entry.name)
-        let value: Value
-        if let last = entry.sets.last(where: { $0.value != nil }), let v = last.value {
-            value = v
-        } else {
-            value = initialValue(for: entry, menu: menu)
-        }
+        let value = entry.sets.last(where: { $0.value != nil })?.value ?? initialValue(for: entry, menu: app.menu(entry.name))
         var newLine: Int?
         mutate(completing: true) { newLine = $0.addSet(to: entry.line, value: value, checked: true) }
         if value.isEmpty, let newLine {

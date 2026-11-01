@@ -92,7 +92,7 @@ struct WorkoutDetailView: View {
             if let w = workout {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        let tcx = "workouts/\(DayDate.string(w.endDate))-\(w.uuid.uuidString).tcx"
+                        let tcx = HealthService.tcxPath(w)
                         var files = [Vault.dailyPath(DayDate.string(w.endDate))]
                         if app.vault.exists(tcx) { files.append(tcx) }
                         app.openChat(attachments: files, text: "Let's review this workout.")
@@ -127,14 +127,7 @@ struct WorkoutDetailView: View {
 
     func stats(_ w: HKWorkout) -> [(String, String)] {
         var items: [(String, String)] = [("Time", DurationText.format(Int(w.duration.rounded())))]
-        var meters: Double?
-        for id in HealthTypes.distanceTypes {
-            if let sum = w.statistics(for: HKQuantityType(id))?.sumQuantity() {
-                meters = sum.doubleValue(for: .meter())
-                break
-            }
-        }
-        if let meters, meters > 0 {
+        if let meters = app.health.distance(of: w.allStatistics), meters > 0 {
             let q = Quantity.distance(meters / 1000, .km).converted(to: app.units)
             items.append(("Distance", q.text))
             if let km = q.numbers.first, km > 0 {

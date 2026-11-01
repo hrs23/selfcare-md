@@ -351,7 +351,7 @@ final class HealthService {
         return HealthRecord(type: def.constant, uuid: uuid, date: date, quantities: quantities)
     }
 
-    private func distance(of stats: [HKQuantityType: HKStatistics]) -> Double? {
+    func distance(of stats: [HKQuantityType: HKStatistics]) -> Double? {
         for id in HealthTypes.distanceTypes {
             if let sum = stats[HKQuantityType(id)]?.sumQuantity() {
                 return sum.doubleValue(for: .meter())
@@ -476,7 +476,11 @@ final class HealthService {
             locations: locs.map { TCXLocation(time: $0.timestamp, latitude: $0.coordinate.latitude, longitude: $0.coordinate.longitude, altitude: $0.verticalAccuracy >= 0 ? $0.altitude : nil) }
         )
         let xml = TCX.build(input)
-        try? app.vault.writeRaw("workouts/\(DayDate.string(w.endDate))-\(w.uuid.uuidString).tcx", xml)
+        try? app.vault.writeRaw(Self.tcxPath(w), xml)
+    }
+
+    static func tcxPath(_ w: HKWorkout) -> String {
+        "workouts/\(DayDate.string(w.endDate))-\(w.uuid.uuidString).tcx"
     }
 
     func importWorkout(_ w: HKWorkout) async {
