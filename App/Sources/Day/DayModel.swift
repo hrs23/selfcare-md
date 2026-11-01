@@ -72,11 +72,7 @@ final class DayModel {
     @discardableResult
     func mutate(completing: Bool = false, snapshot: Bool = true, _ change: (inout DailyDocument) -> Void) -> Bool {
         let before = diskText()
-        if let doc, before.map({ DailyDocument(text: $0).text }) != doc.text {
-            load()
-            return false
-        }
-        if doc == nil && before != nil {
+        if before.map({ DailyDocument(text: $0).text }) != doc?.text {
             load()
             return false
         }
@@ -145,10 +141,9 @@ final class DayModel {
 
     func complete(_ entry: Entry) {
         guard entry.checkbox != true else { return }
-        let menu = app.menu(entry.name)
         var value: Value?
-        if (entry.value?.isEmpty ?? true), let m = menu, !m.fields.isEmpty {
-            let v = initialValue(for: entry, menu: m)
+        if entry.value?.isEmpty ?? true {
+            let v = initialValue(for: entry, menu: app.menu(entry.name))
             if !v.isEmpty { value = v }
         }
         mutate(completing: true) { $0.setEntryCheck(entry.line, true, value: value) }

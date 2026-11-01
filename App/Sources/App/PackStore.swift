@@ -51,10 +51,7 @@ final class PackStore {
         catalog = [:]
         catalogOrder = []
         guard let apple = applePack else { return }
-        let menus = apple.menus(appleHealthTypes: [])
-        let workouts = menus.filter { $0.appleHealth?.hasPrefix("HKWorkoutActivityType") == true }
-        let others = menus.filter { $0.appleHealth?.hasPrefix("HKWorkoutActivityType") != true }
-        for m in workouts + others {
+        for m in apple.menus(appleHealthTypes: []) {
             guard let type = m.appleHealth else { continue }
             catalog[type] = CatalogEntry(type: type, name: m.name, record: m.record, fields: m.fields)
         }
