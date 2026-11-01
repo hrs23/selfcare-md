@@ -82,6 +82,7 @@ final class SyncService {
             try await engine.sync()
             state = engine.state
             app.vaultChanged()
+        } catch SyncError.busy {
         } catch {
             if let engine { state = engine.state }
             state.lastError = error.localizedDescription

@@ -66,6 +66,8 @@ public final class SyncEngine: @unchecked Sendable {
     public private(set) var state: SyncState
     private let save: @Sendable (SyncState) -> Void
     private var skipped: [String] = []
+    private let lock = NSLock()
+    private var busy = false
 
     public init(vault: Vault, provider: SyncProvider, state: SyncState, save: @escaping @Sendable (SyncState) -> Void) {
         self.vault = vault
@@ -110,16 +112,27 @@ public final class SyncEngine: @unchecked Sendable {
         return SyncPreview(localCount: local.count, remoteCount: remote.count, conflictCount: conflicts)
     }
 
+    private func exclusive(_ body: () async throws -> Void) async throws {
+        try lock.withLock {
+            guard !busy else { throw SyncError.busy }
+            busy = true
+        }
+        defer { lock.withLock { busy = false } }
+        try await body()
+    }
+
     public func sync() async throws {
-        do {
-            try await run()
-            state.lastSuccess = Date()
-            state.lastError = skipped.isEmpty ? nil : skipped.joined(separator: "\n")
-            save(state)
-        } catch {
-            state.lastError = error.localizedDescription
-            save(state)
-            throw error
+        try await exclusive {
+            do {
+                try await run()
+                state.lastSuccess = Date()
+                state.lastError = skipped.isEmpty ? nil : skipped.joined(separator: "\n")
+                save(state)
+            } catch {
+                state.lastError = error.localizedDescription
+                save(state)
+                throw error
+            }
         }
     }
 
@@ -240,6 +253,10 @@ public final class SyncEngine: @unchecked Sendable {
     }
 
     public func resolve(_ path: String, with resolution: Resolution) async throws {
+        try await exclusive { try await resolveExclusively(path, with: resolution) }
+    }
+
+    private func resolveExclusively(_ path: String, with resolution: Resolution) async throws {
         guard state.conflicts[path] != nil else { return }
         let remoteList = try await provider.list()
         let remoteVersion = remoteList.first { $0.path == path }?.version

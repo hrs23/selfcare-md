@@ -24,6 +24,33 @@ final class MemoryProvider: SyncProvider, @unchecked Sendable {
     }
 }
 
+final class GatedProvider: SyncProvider, @unchecked Sendable {
+    let inner = MemoryProvider()
+    let entered: AsyncStream<Void>
+    let release: AsyncStream<Void>
+    private let enteredContinuation: AsyncStream<Void>.Continuation
+    let releaseContinuation: AsyncStream<Void>.Continuation
+    private var gated = true
+
+    init() {
+        (entered, enteredContinuation) = AsyncStream.makeStream()
+        (release, releaseContinuation) = AsyncStream.makeStream()
+    }
+
+    func list() async throws -> [RemoteItem] {
+        if gated {
+            gated = false
+            enteredContinuation.yield()
+            for await _ in release { break }
+        }
+        return try await inner.list()
+    }
+
+    func read(_ path: String) async throws -> Data { try await inner.read(path) }
+    func write(_ path: String, _ data: Data) async throws -> String? { try await inner.write(path, data) }
+    func delete(_ path: String) async throws { try await inner.delete(path) }
+}
+
 func tempVault() -> Vault {
     let url = FileManager.default.temporaryDirectory.appendingPathComponent("vault-\(UUID().uuidString)")
     try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
@@ -104,6 +131,22 @@ struct SyncTests {
         try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: b)
         #expect(try vault.read("menus/A.md") == "a changed locally\n")
         #expect(try vault.read("menus/B.md") == "b changed locally\n")
+    }
+
+    @Test func rejectsOverlappingRuns() async throws {
+        let vault = tempVault()
+        try vault.write("menus/A.md", "a")
+        let provider = GatedProvider()
+        let engine = SyncEngine(vault: vault, provider: provider, state: SyncState(), save: { _ in })
+        let first = Task { try await engine.sync() }
+        for await _ in provider.entered { break }
+        await #expect(throws: SyncError.busy) { try await engine.sync() }
+        await #expect(throws: SyncError.busy) { try await engine.resolve("menus/A.md", with: .local) }
+        #expect(engine.state.lastError == nil)
+        provider.releaseContinuation.yield()
+        try await first.value
+        #expect(provider.inner.files["menus/A.md"] == Data("a\n".utf8))
+        try await engine.sync()
     }
 
     @Test func qr() {

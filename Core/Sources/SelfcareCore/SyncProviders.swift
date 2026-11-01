@@ -5,6 +5,7 @@ public enum SyncError: Error, LocalizedError, Equatable {
     case http(Int, String)
     case invalidConfig(String)
     case badResponse
+    case busy
 
     public var errorDescription: String? {
         switch self {
@@ -16,6 +17,7 @@ public enum SyncError: Error, LocalizedError, Equatable {
             }
         case let .invalidConfig(m): m
         case .badResponse: "Unexpected server response"
+        case .busy: "Sync is already running"
         }
     }
 }
