@@ -7,7 +7,7 @@ struct SyncSettingsView: View {
     @State private var editing = false
     @State private var confirmDisconnect = false
 
-    var sync: SyncService { app.sync }
+    var sync: SyncSession { app.sync }
 
     var body: some View {
         Group {
@@ -29,8 +29,8 @@ struct SyncSettingsView: View {
                             LabeledContent("On this iPhone", value: "\(preview.localCount)")
                             LabeledContent("On the server", value: "\(preview.remoteCount)")
                             LabeledContent("Conflicts", value: "\(preview.conflictCount)")
-                            Button("Start sync") { Task { await sync.confirmInitial() } }
-                            Button("Disconnect", role: .destructive) { sync.disconnect() }
+                            Button("Start sync") { Task { await sync.confirm() } }
+                            Button("Disconnect", role: .destructive) { Task { await sync.disconnect() } }
                         }
                     }
                     if !sync.conflicts.isEmpty {
@@ -53,14 +53,14 @@ struct SyncSettingsView: View {
                         if sync.running {
                             ProgressView()
                         } else {
-                            Button("Sync now") { Task { await sync.run(trigger: .manual) } }
+                            Button("Sync now") { Task { await sync.run(.manual) } }
                                 .disabled(sync.pendingPreview != nil)
                         }
                     }
                 }
-                .refreshable { await sync.run(trigger: .manual) }
+                .refreshable { await sync.run(.manual) }
                 .confirmationDialog("Disconnect sync?", isPresented: $confirmDisconnect, titleVisibility: .visible) {
-                    Button("Disconnect", role: .destructive) { sync.disconnect() }
+                    Button("Disconnect", role: .destructive) { Task { await sync.disconnect() } }
                 }
             } else {
                 SyncConnectForm(initial: editing ? sync.config : nil) {
@@ -324,15 +324,19 @@ struct ConflictResolveView: View {
             guard !loaded else { return }
             loaded = true
             local = try? app.vault.read(path)
-            remote = await app.sync.remoteText(path)
+            remote = await app.sync.remoteData(path).flatMap { String(data: $0, encoding: .utf8) }
             merged = local ?? remote ?? ""
         }
     }
 
     func resolve(_ r: SyncEngine.Resolution) {
         Task {
-            await app.sync.resolve(path, r)
-            dismiss()
+            do {
+                try await app.sync.resolve(path, r)
+                dismiss()
+            } catch {
+                app.alert = error.localizedDescription
+            }
         }
     }
 }

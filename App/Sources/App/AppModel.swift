@@ -48,7 +48,7 @@ final class AppModel {
     var pendingChat: PendingChat?
     var alert: String?
     var health: HealthService!
-    var sync: SyncService!
+    var sync: SyncSession!
     var timer: WorkoutTimer!
     var ai: AIService!
 
@@ -59,7 +59,7 @@ final class AppModel {
         packs = PackStore(settings: settings)
         reloadMenus()
         health = HealthService(model: self)
-        sync = SyncService(model: self)
+        sync = SyncSession(app: self)
         timer = WorkoutTimer(model: self)
         ai = AIService(model: self)
     }
@@ -225,7 +225,7 @@ final class AppModel {
         ensureTodayCopied()
         Task {
             await health.importAutomatically()
-            await sync.run(trigger: .foreground)
+            await sync.run(.automatic)
         }
     }
 }

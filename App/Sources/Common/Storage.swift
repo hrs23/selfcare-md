@@ -33,7 +33,7 @@ enum Keychain {
     }
 }
 
-enum AppFiles {
+nonisolated enum AppFiles {
     static var support: URL {
         let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
