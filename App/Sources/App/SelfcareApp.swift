@@ -78,7 +78,7 @@ struct RouteView: View {
 extension AppModel {
     func refresh(date: String) async {
         await health.importDay(date)
-        await sync.run(trigger: .pull)
+        await sync.run(.automatic)
         vaultChanged()
     }
 }
