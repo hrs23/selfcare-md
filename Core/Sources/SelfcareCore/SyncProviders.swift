@@ -124,9 +124,7 @@ public enum SyncConfig: Codable, Sendable, Hashable {
     }
 }
 
-struct HTTP {
-    let session: URLSession
-
+enum HTTP {
     static let uncached: URLSession = {
         let config = URLSessionConfiguration.ephemeral
         config.urlCache = nil
@@ -134,10 +132,10 @@ struct HTTP {
         return URLSession(configuration: config)
     }()
 
-    func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+    static func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         var request = request
         request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await uncached.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw SyncError.badResponse }
         return (data, http)
     }
@@ -152,7 +150,6 @@ fileprivate extension HTTPURLResponse {
 public final class WebDAVProvider: SyncProvider, @unchecked Sendable {
     public let config: WebDAVConfig
     let base: URL
-    let http = HTTP(session: HTTP.uncached)
     private var createdDirs = Set<String>()
     private let lock = NSLock()
 
@@ -194,7 +191,7 @@ public final class WebDAVProvider: SyncProvider, @unchecked Sendable {
         <?xml version="1.0" encoding="utf-8"?>
         <d:propfind xmlns:d="DAV:"><d:prop><d:resourcetype/><d:getetag/><d:getlastmodified/><d:getcontentlength/></d:prop></d:propfind>
         """.utf8)
-        let (data, response) = try await http.send(r)
+        let (data, response) = try await HTTP.send(r)
         guard response.statusCode == 207 else { throw SyncError.http(response.statusCode, path.isEmpty ? "/" : path) }
         let parser = MultistatusParser(data: data)
         let basePath = base.path.hasSuffix("/") ? base.path : base.path + "/"
@@ -238,7 +235,7 @@ public final class WebDAVProvider: SyncProvider, @unchecked Sendable {
     }
 
     public func read(_ path: String) async throws -> Data {
-        let (data, response) = try await http.send(request(path, method: "GET"))
+        let (data, response) = try await HTTP.send(request(path, method: "GET"))
         try response.check(path)
         return data
     }
@@ -250,7 +247,7 @@ public final class WebDAVProvider: SyncProvider, @unchecked Sendable {
             current = current.isEmpty ? String(part) : current + "/" + part
             let known = lock.withLock { createdDirs.contains(current) }
             if known { continue }
-            let (_, response) = try await http.send(request(current, method: "MKCOL", directory: true))
+            let (_, response) = try await HTTP.send(request(current, method: "MKCOL", directory: true))
             guard [201, 405, 301, 200].contains(response.statusCode) else { throw SyncError.http(response.statusCode, current) }
             let dir = current
             lock.withLock { _ = createdDirs.insert(dir) }
@@ -258,13 +255,13 @@ public final class WebDAVProvider: SyncProvider, @unchecked Sendable {
         var r = request(path, method: "PUT")
         r.httpBody = data
         r.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
-        let (_, response) = try await http.send(r)
+        let (_, response) = try await HTTP.send(r)
         try response.check(path)
         return response.value(forHTTPHeaderField: "ETag")
     }
 
     public func delete(_ path: String) async throws {
-        let (_, response) = try await http.send(request(path, method: "DELETE"))
+        let (_, response) = try await HTTP.send(request(path, method: "DELETE"))
         try response.check(path, allow404: true)
     }
 }
@@ -344,7 +341,6 @@ final class MultistatusParser: NSObject, XMLParserDelegate {
 
 public final class S3Provider: SyncProvider, @unchecked Sendable {
     public let config: S3Config
-    let http = HTTP(session: HTTP.uncached)
     let endpoint: URL
     let virtualHost: Bool
 
@@ -398,7 +394,7 @@ public final class S3Provider: SyncProvider, @unchecked Sendable {
 
     public func testConnection() async throws {
         let r = signedRequest(method: "GET", key: nil, query: [("list-type", "2"), ("max-keys", "1"), ("prefix", keyPrefix)])
-        let (_, response) = try await http.send(r)
+        let (_, response) = try await HTTP.send(r)
         try response.check(config.bucket)
     }
 
@@ -408,7 +404,7 @@ public final class S3Provider: SyncProvider, @unchecked Sendable {
         repeat {
             var q = [("list-type", "2"), ("prefix", keyPrefix)]
             if let token { q.append(("continuation-token", token)) }
-            let (data, response) = try await http.send(signedRequest(method: "GET", key: nil, query: q))
+            let (data, response) = try await HTTP.send(signedRequest(method: "GET", key: nil, query: q))
             try response.check(config.bucket)
             let parsed = S3ListParser(data: data).parse()
             for item in parsed.items where item.key.hasPrefix(keyPrefix) && !item.key.hasSuffix("/") {
@@ -420,19 +416,19 @@ public final class S3Provider: SyncProvider, @unchecked Sendable {
     }
 
     public func read(_ path: String) async throws -> Data {
-        let (data, response) = try await http.send(signedRequest(method: "GET", key: keyPrefix + path, query: []))
+        let (data, response) = try await HTTP.send(signedRequest(method: "GET", key: keyPrefix + path, query: []))
         try response.check(path)
         return data
     }
 
     public func write(_ path: String, _ data: Data) async throws -> String? {
-        let (_, response) = try await http.send(signedRequest(method: "PUT", key: keyPrefix + path, query: [], body: data))
+        let (_, response) = try await HTTP.send(signedRequest(method: "PUT", key: keyPrefix + path, query: [], body: data))
         try response.check(path)
         return response.value(forHTTPHeaderField: "ETag")
     }
 
     public func delete(_ path: String) async throws {
-        let (_, response) = try await http.send(signedRequest(method: "DELETE", key: keyPrefix + path, query: []))
+        let (_, response) = try await HTTP.send(signedRequest(method: "DELETE", key: keyPrefix + path, query: []))
         try response.check(path, allow404: true)
     }
 }
