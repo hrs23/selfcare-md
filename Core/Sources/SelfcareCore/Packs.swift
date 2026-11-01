@@ -180,13 +180,14 @@ public enum PackInstaller {
         guard roots.count == 1, let root = roots.first else {
             throw PackError.noMenus
         }
-        return (root, root)
+        return (root, cleanName(root))
     }
 
     static func cleanName(_ name: String) -> String {
         var n = name
         if n.lowercased().hasSuffix(".zip") { n = String(n.dropLast(4)) }
         n = n.replacingOccurrences(of: "/", with: "-")
+        while n.hasPrefix(".") { n.removeFirst() }
         return n.isEmpty ? "Pack" : n
     }
 

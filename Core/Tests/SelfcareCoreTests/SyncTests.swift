@@ -135,6 +135,21 @@ struct PackAndToolTests {
         #expect(try Zip.read(exported).map(\.path).sorted() == ["Out/media/s.png", "Out/menus/Squat.md"])
     }
 
+    @Test func importNameNeverEscapesContainer() throws {
+        let flat = Zip.write([ZipEntry(path: "menus/A.md", data: Data("---\nrecord: check\n---\n".utf8))])
+        for suggested in ["...zip", "..zip", ".zip", ".x.zip"] {
+            let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            let root = try PackInstaller.importZip(flat, suggestedName: suggested, into: dir)
+            #expect(root.deletingLastPathComponent().deletingLastPathComponent().standardizedFileURL == dir.standardizedFileURL)
+            #expect(!root.lastPathComponent.hasPrefix("."))
+        }
+        let nested = Zip.write([ZipEntry(path: ".P/menus/A.md", data: Data("---\nrecord: check\n---\n".utf8))])
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let root = try PackInstaller.importZip(nested, suggestedName: "p.zip", into: dir)
+        #expect(!root.lastPathComponent.hasPrefix("."))
+        #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent("menus/A.md").path))
+    }
+
     @Test func copyReplacesOnlyWhenAsked() throws {
         let pack = try importPack("P", image: 1)
         let vault = tempVault()
