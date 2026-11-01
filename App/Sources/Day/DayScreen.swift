@@ -4,6 +4,7 @@ import UIKit
 
 struct DayScreen: View {
     @Environment(AppModel.self) private var app
+    @Environment(\.scenePhase) private var scenePhase
     @State private var store: DayStore?
     @State private var sheet: DaySheet?
 
@@ -36,6 +37,9 @@ struct DayScreen: View {
         }
         .onChange(of: app.tab) { _, tab in
             if tab != .day { store?.clearAllHistory() }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { store?.clearAllHistory() }
         }
     }
 }
