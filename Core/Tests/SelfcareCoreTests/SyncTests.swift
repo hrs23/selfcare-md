@@ -241,6 +241,11 @@ struct PackAndToolTests {
         return Pack(id: name, name: name, root: root, isBundled: false, language: nil)
     }
 
+    @Test func exportFileName() {
+        #expect(PackInstaller.cleanName("a/b") == "a-b")
+        #expect(PackInstaller.cleanName("../x") == "-x")
+    }
+
     @Test func zipRoundTrip() throws {
         let entries = [ZipEntry(path: "Pack/menus/Squat.md", data: Data(String(repeating: "squat ", count: 100).utf8)), ZipEntry(path: "Pack/media/x.png", data: Data([0, 1, 2, 3]))]
         let data = Zip.write(entries)
