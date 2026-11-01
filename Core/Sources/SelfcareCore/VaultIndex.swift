@@ -105,26 +105,26 @@ public final class VaultIndex: @unchecked Sendable {
 
     public func problems(_ vault: Vault, menus: [MenuFile]) -> [VaultProblem] {
         var result: [VaultProblem] = []
+        func classify(_ path: String, _ doc: DailyDocument) {
+            if let p = doc.fileProblem {
+                result.append(VaultProblem(path: path, message: p))
+            } else if doc.hasLineProblems {
+                result.append(VaultProblem(path: path, message: "Lines with problems"))
+            }
+        }
         for m in menus where m.hasProblem {
             result.append(VaultProblem(path: Vault.menuPath(m.name), message: m.problems.joined(separator: ", ")))
         }
-        for (date, doc) in dailies(vault) {
-            if let p = doc.fileProblem {
-                result.append(VaultProblem(path: Vault.dailyPath(date), message: p))
-            } else if doc.hasLineProblems {
-                result.append(VaultProblem(path: Vault.dailyPath(date), message: "Lines with problems"))
-            }
+        let docs = dailies(vault)
+        for (date, doc) in docs {
+            classify(Vault.dailyPath(date), doc)
         }
-        for date in vault.dailyDates() where (try? vault.read(Vault.dailyPath(date))) == nil {
+        let readable = Set(docs.map(\.date))
+        for date in vault.dailyDates() where !readable.contains(date) {
             result.append(VaultProblem(path: Vault.dailyPath(date), message: "Not UTF-8"))
         }
         if let text = try? vault.read(Vault.templatePath) {
-            let doc = DailyDocument(text: text, kind: .template)
-            if let p = doc.fileProblem {
-                result.append(VaultProblem(path: Vault.templatePath, message: p))
-            } else if doc.hasLineProblems {
-                result.append(VaultProblem(path: Vault.templatePath, message: "Lines with problems"))
-            }
+            classify(Vault.templatePath, DailyDocument(text: text, kind: .template))
         } else if vault.exists(Vault.templatePath) {
             result.append(VaultProblem(path: Vault.templatePath, message: "Not UTF-8"))
         }
@@ -175,15 +175,16 @@ public enum MenuStats {
     public static func weeklyCounts(history: [HistoryItem], weeks: Int, today: String, calendar: Calendar = .current) -> [(weekStart: Date, count: Int)] {
         guard let todayDate = DayDate.date(today, calendar: calendar),
               let thisWeek = calendar.dateInterval(of: .weekOfYear, for: todayDate)?.start else { return [] }
+        let done = history.compactMap { item -> (date: String, day: Date)? in
+            guard item.entry.checkbox == true || item.entry.sets.contains(where: \.checked),
+                  let d = DayDate.date(item.date, calendar: calendar) else { return nil }
+            return (item.date, d)
+        }
         var result: [(Date, Int)] = []
         for i in stride(from: weeks - 1, through: 0, by: -1) {
             guard let start = calendar.date(byAdding: .weekOfYear, value: -i, to: thisWeek),
                   let end = calendar.date(byAdding: .day, value: 7, to: start) else { continue }
-            let days = Set(history.filter { item in
-                guard let d = DayDate.date(item.date, calendar: calendar) else { return false }
-                let done = item.entry.checkbox == true || item.entry.sets.contains(where: \.checked)
-                return done && d >= start && d < end
-            }.map(\.date))
+            let days = Set(done.filter { $0.day >= start && $0.day < end }.map(\.date))
             result.append((start, days.count))
         }
         return result
