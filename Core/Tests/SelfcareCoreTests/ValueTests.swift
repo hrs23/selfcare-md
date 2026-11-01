@@ -166,4 +166,24 @@ struct FrontmatterTests {
         file.frontmatter?.set("record", .scalar("sets"))
         #expect(file.text == "---\ntags:\n  - a\n\n  - b\n\nrecord: sets\n---\nBody\n")
     }
+
+    @Test func quotesInsideValues() {
+        let fm = Frontmatter.parse([
+            "tags: [it's, b]",
+            #"names: ["a\", b", 'c'', d', e]"#,
+            "record: it's # note",
+            "title: '# not a comment'",
+        ])
+        #expect(fm["tags"] == .list(["it's", "b"]))
+        #expect(fm["names"] == .list(["a\", b", "c', d", "e"]))
+        #expect(fm["record"] == .scalar("it's"))
+        #expect(fm["title"] == .scalar("# not a comment"))
+        let items = ["it's", "a, b", #"say "hi""#, #"back\slash"#, "'q'"]
+        var out = Frontmatter()
+        out.set("tags", .list(items))
+        out.set("record", .scalar("it's"))
+        let back = Frontmatter.parse(out.text.components(separatedBy: "\n"))
+        #expect(back["tags"] == .list(items))
+        #expect(back["record"] == .scalar("it's"))
+    }
 }
