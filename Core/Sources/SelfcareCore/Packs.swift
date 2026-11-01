@@ -109,8 +109,8 @@ public enum ImageResolver {
 public enum PackInstaller {
     public static func copy(menus names: [String], from pack: Pack, to vault: Vault, replacing: Bool = false) throws {
         let packFiles = pack.files()
-        for name in names {
-            let text = try pack.menuText(name)
+        let texts = try names.map { ($0, try pack.menuText($0)) }
+        for (name, text) in texts {
             let existing = vault.menuFileName(for: name)
             if existing != nil && !replacing { continue }
             let target = Vault.menuPath(existing ?? name)
