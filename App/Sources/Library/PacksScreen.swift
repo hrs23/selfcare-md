@@ -165,10 +165,12 @@ struct PackDetailView: View {
                             } label: {
                                 Label(enabled ? "Disable" : "Enable", systemImage: enabled ? "minus.circle" : "checkmark.circle")
                             }
+                            let available = Set(menus.map(\.name).filter { !existing.contains($0.lowercased()) })
+                            let allSelected = !available.isEmpty && available.isSubset(of: selection)
                             Button {
-                                let available = menus.map(\.name).filter { !existing.contains($0.lowercased()) }
-                                selection = selection.count == available.count ? [] : Set(available)
-                            } label: { Label("Select all", systemImage: "checklist") }
+                                if allSelected { selection.subtract(available) } else { selection.formUnion(available) }
+                            } label: { Label(allSelected ? "Deselect all" : "Select all", systemImage: "checklist") }
+                            .disabled(available.isEmpty)
                             if !pack.isBundled {
                                 Button(role: .destructive) { confirmDelete = true } label: { Label("Delete", systemImage: "trash") }
                             }
