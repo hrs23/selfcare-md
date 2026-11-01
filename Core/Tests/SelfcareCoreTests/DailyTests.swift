@@ -108,6 +108,17 @@ struct DailyTests {
         }
     }
 
+    @Test func dayDateIsGregorian() throws {
+        var japanese = Calendar(identifier: .japanese)
+        japanese.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+        let date = try #require(DayDate.date("2026-09-27", calendar: japanese))
+        #expect(DayDate.string(date, calendar: japanese) == "2026-09-27")
+        var gregorian = Calendar(identifier: .gregorian)
+        gregorian.timeZone = japanese.timeZone
+        #expect(DayDate.string(date, calendar: gregorian) == "2026-09-27")
+        #expect(DayDate.adding(1, to: "2026-09-27", calendar: japanese) == "2026-09-28")
+    }
+
     @Test func completion() {
         let doc = DailyDocument(text: "## Selfcare\n\n- [[S]]\n  - [x] 10\n- [[Plan]]\n- [[NoSnack]]\n", kind: .template)
         let records: [String: Record] = ["S": .sets, "Plan": .check, "NoSnack": .avoid]
