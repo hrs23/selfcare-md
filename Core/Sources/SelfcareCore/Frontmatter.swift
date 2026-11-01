@@ -74,7 +74,8 @@ public struct Frontmatter: Sendable, Hashable {
             let next = isBlank(line) ? lines[(index + 1)...].first { !isBlank($0) } : line
             if let key = keyOf(line) {
                 entries.append(.pair(key: key, lines: [line]))
-            } else if case let .pair(key, existing)? = entries.last, let next, continues(next) {
+            } else if case let .pair(key, existing)? = entries.last, let next, continues(next),
+                      !isBlank(line) || existing.count > 1 || interpret([existing[0]]) == .null {
                 entries[entries.count - 1] = .pair(key: key, lines: existing + [line])
             } else {
                 entries.append(.other(line))

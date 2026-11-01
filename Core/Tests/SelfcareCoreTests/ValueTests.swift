@@ -190,6 +190,11 @@ struct FrontmatterTests {
         #expect(file.text == "---\ntags:\n  - a\n\n  - b\n\nrecord: sets\n---\nBody\n")
     }
 
+    @Test func blankLineEndsInlineValue() {
+        #expect(Frontmatter.parse(["a: x", "", "  - y"])["a"] == .scalar("x"))
+        #expect(Frontmatter.parse(["a: # c", "", "  - y"])["a"] == .list(["y"]))
+    }
+
     @Test func quotesInsideValues() {
         let fm = Frontmatter.parse([
             "tags: [it's, b]",
