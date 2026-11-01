@@ -4,7 +4,11 @@ import SwiftUI
 extension AppModel {
     func healthType(for entry: Entry) -> String? {
         if let m = menu(entry.name), let type = m.appleHealth { return type }
-        return packs.catalog.values.first { $0.name == entry.name }?.type
+        return catalogEntry(named: entry.name)?.type
+    }
+
+    func catalogEntry(named name: String) -> CatalogEntry? {
+        packs.catalog.values.first { $0.name == name }
     }
 
     func workoutUUID(for entry: Entry, marker: HealthMarker?) -> String? {
