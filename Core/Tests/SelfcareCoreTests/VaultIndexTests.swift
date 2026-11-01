@@ -51,6 +51,11 @@ struct ImageTests {
         #expect(resolve("missing.png") == nil)
     }
 
+    @Test func photoMediaPathResolves() {
+        let path = "media/\(VaultTools.slug("Squat 100%25 off"))-abc123.jpg"
+        #expect(ImageResolver.resolve("../" + path, fromDirectory: "menus", files: [path]) == path)
+    }
+
     @Test func markdownReferences() {
         let body = """
         ![a](../media/a.png) and ![[b.png|200]]
