@@ -344,10 +344,13 @@ public final class S3Provider: SyncProvider, @unchecked Sendable {
     let endpoint: URL
     let virtualHost: Bool
     let host: String
+    let region: String
 
     public init(config: S3Config) throws {
         var e = config.endpoint.trimmingCharacters(in: .whitespaces)
-        if e.isEmpty { e = "https://s3.\(config.region.isEmpty ? "us-east-1" : config.region).amazonaws.com" }
+        let defaultRegion = config.region.isEmpty || (e.isEmpty && config.region == "auto")
+        region = defaultRegion ? "us-east-1" : config.region
+        if e.isEmpty { e = "https://s3.\(region).amazonaws.com" }
         if !e.contains("://") { e = "https://" + e }
         while e.hasSuffix("/") { e.removeLast() }
         guard let u = URL(string: e), let endpointHost = u.host else { throw SyncError.invalidConfig("Invalid endpoint") }
@@ -392,7 +395,7 @@ public final class S3Provider: SyncProvider, @unchecked Sendable {
         r.httpMethod = method
         r.timeoutInterval = 60
         if !body.isEmpty || method == "PUT" { r.httpBody = body }
-        let signed = S3Signer.sign(method: method, host: host, path: path, query: canonicalQuery, payload: body, region: config.region.isEmpty ? "us-east-1" : config.region, accessKey: config.accessKey, secret: config.secret, date: date)
+        let signed = S3Signer.sign(method: method, host: host, path: path, query: canonicalQuery, payload: body, region: region, accessKey: config.accessKey, secret: config.secret, date: date)
         for (k, v) in signed { r.setValue(v, forHTTPHeaderField: k) }
         return r
     }

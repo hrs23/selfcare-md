@@ -256,6 +256,17 @@ struct S3RequestTests {
         let dotted = try S3Provider(config: S3Config(endpoint: "", region: "eu-west-1", bucket: "my.bucket", prefix: "", accessKey: "k", secret: "s"))
         #expect(try dotted.signedRequest(method: "GET", key: "a.md", query: []).url?.host == "my.bucket.s3.eu-west-1.amazonaws.com")
     }
+
+    @Test func defaultRegion() throws {
+        for region in ["", "auto"] {
+            let p = try S3Provider(config: S3Config(endpoint: "", region: region, bucket: "b", prefix: "", accessKey: "k", secret: "s"))
+            let r = try p.signedRequest(method: "GET", key: "a.md", query: [])
+            #expect(r.url?.host == "b.s3.us-east-1.amazonaws.com")
+            #expect(r.value(forHTTPHeaderField: "Authorization")?.contains("/us-east-1/s3/aws4_request") == true)
+        }
+        let r2 = try S3Provider(config: S3Config(endpoint: "https://x.r2.cloudflarestorage.com", region: "auto", bucket: "b", prefix: "", accessKey: "k", secret: "s"))
+        #expect(try r2.signedRequest(method: "GET", key: "a.md", query: []).value(forHTTPHeaderField: "Authorization")?.contains("/auto/s3/aws4_request") == true)
+    }
 }
 
 struct WebDAVIntegrationTests {
