@@ -100,10 +100,6 @@ public final class Vault: @unchecked Sendable {
         return s
     }
 
-    public func readIfExists(_ relative: String) -> String? {
-        try? read(relative)
-    }
-
     public func write(_ relative: String, _ text: String) throws {
         try writeData(relative, Data(VaultText.normalized(text).utf8))
     }

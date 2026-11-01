@@ -66,7 +66,7 @@ final class DayModel {
     }
 
     private func diskText() -> String? {
-        app.vault.readIfExists(path)
+        try? app.vault.read(path)
     }
 
     @discardableResult

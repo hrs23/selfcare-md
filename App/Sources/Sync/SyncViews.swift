@@ -323,7 +323,7 @@ struct ConflictResolveView: View {
         .task {
             guard !loaded else { return }
             loaded = true
-            local = app.vault.readIfExists(path)
+            local = try? app.vault.read(path)
             remote = await app.sync.remoteText(path)
             merged = local ?? remote ?? ""
         }
