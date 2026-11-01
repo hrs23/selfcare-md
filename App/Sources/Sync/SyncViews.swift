@@ -30,7 +30,7 @@ struct SyncSettingsView: View {
                             LabeledContent("On the server", value: "\(preview.remoteCount)")
                             LabeledContent("Conflicts", value: "\(preview.conflictCount)")
                             Button("Start sync") { Task { await sync.confirmInitial() } }
-                            Button("Cancel", role: .destructive) { sync.disconnect() }
+                            Button("Disconnect", role: .destructive) { sync.disconnect() }
                         }
                     }
                     if !sync.conflicts.isEmpty {

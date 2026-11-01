@@ -173,7 +173,7 @@ struct PackDetailView: View {
                                 Button(role: .destructive) { confirmDelete = true } label: { Label("Delete", systemImage: "trash") }
                             }
                         } label: { Image(systemName: "ellipsis.circle") }
-                        Button("Add \(selection.isEmpty ? "" : "(\(selection.count))")") {
+                        Button(selection.isEmpty ? "Add" : "Add (\(selection.count))") {
                             if selection.contains(where: { existing.contains($0.lowercased()) }) {
                                 confirmReplace = true
                             } else {
