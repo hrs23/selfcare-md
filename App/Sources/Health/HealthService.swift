@@ -125,6 +125,7 @@ final class HealthService {
         var records: [HealthRecord] = []
         var aggregateDays: [String: Set<String>] = [:]
         var workouts: [HKWorkout] = []
+        var anchors: [String: HKQueryAnchor] = [:]
         let predicate = HKQuery.predicateForSamples(withStart: since, end: nil, options: .strictStartDate)
         do {
             if workoutsEnabled {
@@ -135,7 +136,7 @@ final class HealthService {
                         workouts.append(w)
                     }
                 }
-                saveAnchor(anchor, key: HealthTypes.workoutKey)
+                anchors[HealthTypes.workoutKey] = anchor
             }
             for def in enabledOthers {
                 let (samples, anchor) = try await anchored(def.sampleType, predicate: predicate, key: def.constant)
@@ -146,7 +147,7 @@ final class HealthService {
                 } else {
                     records.append(contentsOf: samples.compactMap { record(for: $0, def: def) })
                 }
-                saveAnchor(anchor, key: def.constant)
+                anchors[def.constant] = anchor
             }
             for (constant, days) in aggregateDays {
                 guard let def = HealthTypes.def(constant) else { continue }
@@ -154,8 +155,10 @@ final class HealthService {
                     if let r = try await aggregate(def, day: day) { records.append(r) }
                 }
             }
-            apply(records)
+            let applied = apply(records)
             for w in workouts { await exportTCX(w) }
+            guard applied else { return }
+            for (key, anchor) in anchors { saveAnchor(anchor, key: key) }
             lastError = nil
         } catch {
             lastError = error.localizedDescription
@@ -169,8 +172,8 @@ final class HealthService {
         return (result.addedSamples, result.newAnchor)
     }
 
-    private func saveAnchor(_ anchor: HKQueryAnchor?, key: String) {
-        guard let anchor, let data = try? NSKeyedArchiver.archivedData(withRootObject: anchor, requiringSecureCoding: true) else { return }
+    private func saveAnchor(_ anchor: HKQueryAnchor, key: String) {
+        guard let data = try? NSKeyedArchiver.archivedData(withRootObject: anchor, requiringSecureCoding: true) else { return }
         settings.anchors[key] = data
     }
 
@@ -244,26 +247,16 @@ final class HealthService {
         for w in workouts { await exportTCX(w) }
     }
 
-    func apply(_ records: [HealthRecord]) {
-        guard !records.isEmpty else { return }
-        let placement = app.placement()
-        var changed = false
-        for (date, group) in Dictionary(grouping: records, by: \.date) {
-            let result = app.loadDaily(date)
-            if result.unreadable { continue }
-            var doc = result.doc ?? app.newDaily(date)
-            if doc.fileProblem != nil { continue }
-            let before = doc.text
-            for r in group.sorted(by: { ($0.uuid ?? "") < ($1.uuid ?? "") }) {
-                placement.place(r, into: &doc)
-            }
-            let text = doc.text
-            if text != before {
-                try? app.vault.write(Vault.dailyPath(date), text)
-                changed = true
-            }
+    @discardableResult
+    func apply(_ records: [HealthRecord]) -> Bool {
+        guard !records.isEmpty else { return true }
+        let result = app.placement().apply(records, vault: app.vault) { app.newDaily($0) }
+        if !result.written.isEmpty { app.vaultChanged() }
+        guard result.failed.isEmpty else {
+            lastError = result.failed.sorted { $0.key < $1.key }.map(\.value).joined(separator: "\n")
+            return false
         }
-        if changed { app.vaultChanged() }
+        return true
     }
 
     private func aggregateDay(for sample: HKSample, def: HealthTypeDef) -> String {
