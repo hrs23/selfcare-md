@@ -143,6 +143,12 @@ struct HTTP {
     }
 }
 
+fileprivate extension HTTPURLResponse {
+    func check(_ label: String, allow404: Bool = false) throws {
+        guard (200..<300).contains(statusCode) || (allow404 && statusCode == 404) else { throw SyncError.http(statusCode, label) }
+    }
+}
+
 public final class WebDAVProvider: SyncProvider, @unchecked Sendable {
     public let config: WebDAVConfig
     let base: URL
@@ -233,7 +239,7 @@ public final class WebDAVProvider: SyncProvider, @unchecked Sendable {
 
     public func read(_ path: String) async throws -> Data {
         let (data, response) = try await http.send(request(path, method: "GET"))
-        guard (200..<300).contains(response.statusCode) else { throw SyncError.http(response.statusCode, path) }
+        try response.check(path)
         return data
     }
 
@@ -253,13 +259,13 @@ public final class WebDAVProvider: SyncProvider, @unchecked Sendable {
         r.httpBody = data
         r.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
         let (_, response) = try await http.send(r)
-        guard (200..<300).contains(response.statusCode) else { throw SyncError.http(response.statusCode, path) }
+        try response.check(path)
         return response.value(forHTTPHeaderField: "ETag")
     }
 
     public func delete(_ path: String) async throws {
         let (_, response) = try await http.send(request(path, method: "DELETE"))
-        guard (200..<300).contains(response.statusCode) || response.statusCode == 404 else { throw SyncError.http(response.statusCode, path) }
+        try response.check(path, allow404: true)
     }
 }
 
@@ -396,7 +402,7 @@ public final class S3Provider: SyncProvider, @unchecked Sendable {
     public func testConnection() async throws {
         let r = signedRequest(method: "GET", key: nil, query: [("list-type", "2"), ("max-keys", "1"), ("prefix", keyPrefix)])
         let (_, response) = try await http.send(r)
-        guard (200..<300).contains(response.statusCode) else { throw SyncError.http(response.statusCode, config.bucket) }
+        try response.check(config.bucket)
     }
 
     public func list() async throws -> [RemoteItem] {
@@ -406,7 +412,7 @@ public final class S3Provider: SyncProvider, @unchecked Sendable {
             var q = [("list-type", "2"), ("prefix", keyPrefix)]
             if let token { q.append(("continuation-token", token)) }
             let (data, response) = try await http.send(signedRequest(method: "GET", key: nil, query: q))
-            guard (200..<300).contains(response.statusCode) else { throw SyncError.http(response.statusCode, config.bucket) }
+            try response.check(config.bucket)
             let parsed = S3ListParser(data: data).parse()
             for item in parsed.items where item.key.hasPrefix(keyPrefix) && !item.key.hasSuffix("/") {
                 result.append(RemoteItem(path: String(item.key.dropFirst(keyPrefix.count)), version: item.etag))
@@ -418,19 +424,19 @@ public final class S3Provider: SyncProvider, @unchecked Sendable {
 
     public func read(_ path: String) async throws -> Data {
         let (data, response) = try await http.send(signedRequest(method: "GET", key: keyPrefix + path, query: []))
-        guard (200..<300).contains(response.statusCode) else { throw SyncError.http(response.statusCode, path) }
+        try response.check(path)
         return data
     }
 
     public func write(_ path: String, _ data: Data) async throws -> String? {
         let (_, response) = try await http.send(signedRequest(method: "PUT", key: keyPrefix + path, query: [], body: data))
-        guard (200..<300).contains(response.statusCode) else { throw SyncError.http(response.statusCode, path) }
+        try response.check(path)
         return response.value(forHTTPHeaderField: "ETag")
     }
 
     public func delete(_ path: String) async throws {
         let (_, response) = try await http.send(signedRequest(method: "DELETE", key: keyPrefix + path, query: []))
-        guard (200..<300).contains(response.statusCode) || response.statusCode == 404 else { throw SyncError.http(response.statusCode, path) }
+        try response.check(path, allow404: true)
     }
 }
 

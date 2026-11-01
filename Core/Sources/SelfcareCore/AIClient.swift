@@ -178,6 +178,13 @@ public final class ChatClient: @unchecked Sendable {
         return .server(status, message(body))
     }
 
+    static func check(_ response: URLResponse, _ data: Data) throws {
+        guard let http = response as? HTTPURLResponse else { throw AIError.badResponse }
+        guard (200..<300).contains(http.statusCode) else {
+            throw classify(status: http.statusCode, body: String(decoding: data, as: UTF8.self))
+        }
+    }
+
     static func message(_ body: String) -> String {
         if let data = body.data(using: .utf8), let obj = try? JSONSerialization.jsonObject(with: data) {
             if let dict = obj as? [String: Any] {
@@ -202,10 +209,7 @@ public final class ChatClient: @unchecked Sendable {
     public func models() async throws -> [String] {
         do {
             let (data, response) = try await session.data(for: request("models", method: "GET"))
-            guard let http = response as? HTTPURLResponse else { throw AIError.badResponse }
-            guard (200..<300).contains(http.statusCode) else {
-                throw Self.classify(status: http.statusCode, body: String(decoding: data, as: UTF8.self))
-            }
+            try Self.check(response, data)
             guard let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw AIError.badResponse }
             let list = (obj["data"] as? [[String: Any]]) ?? (obj["models"] as? [[String: Any]]) ?? []
             return list.compactMap { ($0["id"] as? String) ?? ($0["name"] as? String) }
@@ -219,8 +223,7 @@ public final class ChatClient: @unchecked Sendable {
         do {
             let body: [String: Any] = ["model": model, "messages": [["role": "user", "content": "Reply with OK."]], "max_completion_tokens": 16]
             let (data, response) = try await session.data(for: request("chat/completions", body: body))
-            guard let http = response as? HTTPURLResponse else { throw AIError.badResponse }
-            if http.statusCode == 400, String(decoding: data, as: UTF8.self).contains("max_completion_tokens") {
+            if (response as? HTTPURLResponse)?.statusCode == 400, String(decoding: data, as: UTF8.self).contains("max_completion_tokens") {
                 let retry: [String: Any] = ["model": model, "messages": [["role": "user", "content": "Reply with OK."]], "max_tokens": 16]
                 let (d2, r2) = try await session.data(for: request("chat/completions", body: retry))
                 guard let h2 = r2 as? HTTPURLResponse, (200..<300).contains(h2.statusCode) else {
@@ -228,9 +231,7 @@ public final class ChatClient: @unchecked Sendable {
                 }
                 return
             }
-            guard (200..<300).contains(http.statusCode) else {
-                throw Self.classify(status: http.statusCode, body: String(decoding: data, as: UTF8.self))
-            }
+            try Self.check(response, data)
         } catch {
             throw Self.wrap(error)
         }
@@ -330,10 +331,7 @@ public final class ChatClient: @unchecked Sendable {
         do {
             let body: [String: Any] = ["model": model, "prompt": prompt, "n": 1, "size": "1024x1024"]
             let (data, response) = try await session.data(for: request("images/generations", body: body))
-            guard let http = response as? HTTPURLResponse else { throw AIError.badResponse }
-            guard (200..<300).contains(http.statusCode) else {
-                throw Self.classify(status: http.statusCode, body: String(decoding: data, as: UTF8.self))
-            }
+            try Self.check(response, data)
             guard let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let first = (obj["data"] as? [[String: Any]])?.first else { throw AIError.badResponse }
             if let b64 = first["b64_json"] as? String, let d = Data(base64Encoded: b64) { return d }
