@@ -205,6 +205,21 @@ struct PackAndToolTests {
         #expect(perm.detail.contains("- hello there") && perm.detail.contains("+ hello you"))
     }
 
+    @Test func globLimit() async throws {
+        await #expect(processExitsWith: .success) {
+            let vault = tempVault()
+            try vault.write("menus/Squat.md", "x")
+            let ctx = ToolContext(imageGenerator: nil, fetcher: { _ in (Data(), nil) })
+            let result = try await VaultTools(vault: vault).execute(ToolCall(id: "1", name: "glob", arguments: #"{"pattern":"menus/*.md","limit":-1}"#), context: ctx)
+            guard case .text = result else { exit(1) }
+        }
+        let vault = tempVault()
+        try vault.write("menus/Squat.md", "x")
+        let ctx = ToolContext(imageGenerator: nil, fetcher: { _ in (Data(), nil) })
+        guard case let .text(t) = try await VaultTools(vault: vault).execute(ToolCall(id: "1", name: "glob", arguments: #"{"pattern":"menus/*.md","limit":0}"#), context: ctx) else { Issue.record(); return }
+        #expect(t == "… 1 more")
+    }
+
     @Test func glob() throws {
         let r = try Glob.regex("daily/2026-09-*.md")
         #expect(Glob.matches(r, "daily/2026-09-27.md"))
