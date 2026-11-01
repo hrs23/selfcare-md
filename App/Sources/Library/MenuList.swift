@@ -45,7 +45,6 @@ struct MenuThumb: View {
 
 struct MenuListView: View {
     @Environment(AppModel.self) private var app
-    var picking: Bool
     var includePacks: Bool
     var filter: ((MenuFile) -> Bool)?
     var onPick: (MenuFile) -> Void
@@ -244,7 +243,6 @@ struct MenuListView: View {
 }
 
 struct MenuPickerSheet: View {
-    @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
     let title: String
     var filter: ((MenuFile) -> Bool)?
@@ -255,7 +253,7 @@ struct MenuPickerSheet: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            MenuListView(picking: true, includePacks: includePacks, filter: filter, onPick: { menu in
+            MenuListView(includePacks: includePacks, filter: filter, onPick: { menu in
                 onPick(menu)
                 dismiss()
             }, onCreate: { name in

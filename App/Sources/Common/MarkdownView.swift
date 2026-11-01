@@ -4,7 +4,7 @@ struct MarkdownView: View {
     let text: String
     var imageResolver: ((String) -> URL?)?
 
-    enum Block: Hashable {
+    enum Block {
         case heading(Int, String)
         case paragraph(String)
         case list([(String, String)])
@@ -13,22 +13,6 @@ struct MarkdownView: View {
         case image(String, String)
         case table(String)
         case rule
-
-        static func == (lhs: Block, rhs: Block) -> Bool { lhs.hashKey == rhs.hashKey }
-        func hash(into hasher: inout Hasher) { hasher.combine(hashKey) }
-
-        var hashKey: String {
-            switch self {
-            case let .heading(l, t): "h\(l)\(t)"
-            case let .paragraph(t): "p\(t)"
-            case let .list(items): "l" + items.map { $0.0 + $0.1 }.joined(separator: "\u{1}")
-            case let .code(t): "c\(t)"
-            case let .quote(t): "q\(t)"
-            case let .image(a, s): "i\(a)\(s)"
-            case let .table(t): "t\(t)"
-            case .rule: "r"
-            }
-        }
     }
 
     static func parse(_ text: String) -> [Block] {

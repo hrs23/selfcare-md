@@ -1,6 +1,6 @@
 import Foundation
 
-public enum Field: String, CaseIterable, Sendable, Codable, Hashable, Identifiable {
+public enum Field: String, CaseIterable, Sendable, Hashable, Identifiable {
     case weight
     case reps
     case distance
@@ -248,10 +248,6 @@ public struct Value: Hashable, Sendable {
 
     public func restricted(to fields: [Field]) -> Value {
         Value(ordered.filter { fields.contains($0.field) })
-    }
-
-    public func withFields(_ fields: [Field], units: UnitPreferences) -> Value {
-        Value(Field.sorted(fields).map { quantities[$0] ?? .zero($0, units: units) })
     }
 
     public func converted(to units: UnitPreferences) -> Value {

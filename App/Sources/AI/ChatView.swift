@@ -103,7 +103,6 @@ struct ChatView: View {
     @Environment(AppModel.self) private var app
     @Bindable var session: ChatSession
     @State private var picking = false
-    @FocusState private var inputFocused: Bool
 
     var mentionQuery: String? {
         guard let last = session.input.split(separator: " ", omittingEmptySubsequences: false).last, last.hasPrefix("@") else { return nil }
@@ -113,7 +112,7 @@ struct ChatView: View {
     var mentionMatches: [String] {
         guard let q = mentionQuery?.lowercased() else { return [] }
         return app.vault.list()
-            .filter { !$0.hasPrefix(".") && (q.isEmpty || $0.lowercased().contains(q)) }
+            .filter { q.isEmpty || $0.lowercased().contains(q) }
             .sorted { ($0.hasPrefix("daily/") ? 1 : 0, $1) < ($1.hasPrefix("daily/") ? 1 : 0, $0) }
             .prefix(12)
             .map { $0 }
@@ -173,7 +172,7 @@ struct ChatView: View {
                 .frame(maxHeight: 200)
                 .background(.bar)
             }
-            InputBar(session: session, picking: $picking, focused: $inputFocused)
+            InputBar(session: session, picking: $picking)
         }
         .background(Theme.canvas)
         .sheet(isPresented: $picking) {
@@ -185,7 +184,6 @@ struct ChatView: View {
 struct InputBar: View {
     @Bindable var session: ChatSession
     @Binding var picking: Bool
-    var focused: FocusState<Bool>.Binding
 
     var body: some View {
         VStack(spacing: 6) {
@@ -217,7 +215,6 @@ struct InputBar: View {
                 .padding(.bottom, 6)
                 TextField("Message", text: $session.input, axis: .vertical)
                     .lineLimit(1...6)
-                    .focused(focused)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
@@ -240,7 +237,6 @@ struct InputBar: View {
 }
 
 struct MessageView: View {
-    @Environment(AppModel.self) private var app
     let session: ChatSession
     let message: ChatMessage
     @State private var expanded = false

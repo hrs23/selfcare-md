@@ -1,6 +1,6 @@
 import Foundation
 
-public enum Record: String, CaseIterable, Sendable, Codable, Hashable, Identifiable {
+public enum Record: String, CaseIterable, Sendable, Hashable, Identifiable {
     case check, avoid, sets
     public var id: String { rawValue }
 }
@@ -19,7 +19,6 @@ public struct MenuFile: Sendable, Hashable, Identifiable {
 
     public var hasProblem: Bool { !problems.isEmpty }
     public var body: String { file.body }
-    public var usesFields: Bool { record != .avoid }
 
     public init(name: String, text: String, appleHealthTypes: Set<String>) {
         self.name = name

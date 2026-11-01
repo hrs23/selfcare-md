@@ -53,7 +53,7 @@ enum AIPreset: String, Codable, CaseIterable, Identifiable {
     var fallbackImageModel: String { "gpt-image-2" }
 }
 
-enum QuickKind: String, Codable, CaseIterable, Identifiable {
+enum QuickKind: String, CaseIterable, Identifiable {
     case dayPlan, menuTidy, menuImage, libraryCreate
 
     var id: String { rawValue }

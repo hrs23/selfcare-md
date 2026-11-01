@@ -334,7 +334,6 @@ struct CodeEditor: UIViewRepresentable {
             storage.beginEditing()
             let full = NSRange(location: 0, length: ns.length)
             storage.setAttributes([.font: base, .foregroundColor: UIColor.label], range: full)
-            var lineIndex = 0
             var location = 0
             var inFrontmatter = false
             let lines = text.components(separatedBy: "\n")
@@ -357,14 +356,13 @@ struct CodeEditor: UIViewRepresentable {
                 Self.apply(#"\[[ xX]\]"#, in: line, offset: location, storage: storage, attrs: [.foregroundColor: UIColor.systemGreen])
                 Self.apply(#"\[\[[^\]]+\]\]"#, in: line, offset: location, storage: storage, attrs: [.foregroundColor: UIColor.systemBlue])
                 Self.apply(#"<!--.*?-->"#, in: line, offset: location, storage: storage, attrs: [.foregroundColor: UIColor.tertiaryLabel])
-                if parent.marks.missing.contains(lineIndex) {
+                if parent.marks.missing.contains(i) {
                     Self.apply(#"\[\[[^\]]+\]\]"#, in: line, offset: location, storage: storage, attrs: [.foregroundColor: UIColor.systemOrange, .underlineStyle: NSUnderlineStyle.single.rawValue | NSUnderlineStyle.patternDot.rawValue])
                 }
-                if parent.marks.problems.contains(lineIndex) {
+                if parent.marks.problems.contains(i) {
                     storage.addAttribute(.backgroundColor, value: UIColor.systemOrange.withAlphaComponent(0.18), range: range)
                 }
                 location += length + 1
-                lineIndex += 1
             }
             storage.endEditing()
             tv.selectedRange = selected

@@ -29,13 +29,6 @@ public struct Frontmatter: Sendable, Hashable {
         self.entries = entries
     }
 
-    public var keys: [String] {
-        entries.compactMap {
-            if case let .pair(key, _) = $0 { return key }
-            return nil
-        }
-    }
-
     public subscript(key: String) -> YAMLValue? {
         for entry in entries {
             if case let .pair(k, lines) = entry, k == key {

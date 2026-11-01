@@ -25,7 +25,6 @@ public struct VaultFileInfo: Sendable, Hashable {
     public var created: Date?
     public var modified: Date?
     public var size: Int
-    public var isDirectory: Bool
 }
 
 public final class Vault: @unchecked Sendable {
@@ -146,8 +145,7 @@ public final class Vault: @unchecked Sendable {
             path: relative,
             created: attrs[.creationDate] as? Date,
             modified: attrs[.modificationDate] as? Date,
-            size: (attrs[.size] as? NSNumber)?.intValue ?? 0,
-            isDirectory: (attrs[.type] as? FileAttributeType) == .typeDirectory
+            size: (attrs[.size] as? NSNumber)?.intValue ?? 0
         )
     }
 
@@ -265,25 +263,9 @@ public enum WikiLinks {
         result += ns.substring(from: last)
         return result
     }
-
-    public static func names(in text: String) -> [String] {
-        let ns = text as NSString
-        return regex.matches(in: text, range: NSRange(location: 0, length: ns.length)).map {
-            ns.substring(with: $0.range(at: 1)).trimmingCharacters(in: .whitespaces)
-        }
-    }
 }
 
 public enum DayDate {
-    public static func formatter() -> DateFormatter {
-        let f = DateFormatter()
-        f.calendar = Calendar(identifier: .gregorian)
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.timeZone = .current
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }
-
     public static func string(_ date: Date, calendar: Calendar = .current) -> String {
         let c = calendar.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)

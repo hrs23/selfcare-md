@@ -60,16 +60,13 @@ final class HealthService {
         }
         for def in enabledOthers {
             for t in def.readTypes { types.insert(t) }
-            if case .bloodPressure = def.kind { types.insert(HKCorrelationType(.bloodPressure)) }
         }
         return types
     }
 
     func requestAuthorization() async throws {
         guard available else { throw HealthError.unavailable }
-        let types = readTypes()
-        let read = types.filter { !($0 is HKCorrelationType) }
-        try await store.requestAuthorization(toShare: [], read: read)
+        try await store.requestAuthorization(toShare: [], read: readTypes())
         settings.requested = true
     }
 

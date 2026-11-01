@@ -78,13 +78,6 @@ final class PackStore {
         settings.prefs.enabledPacks = list
     }
 
-    var visiblePacks: [Pack] {
-        packs.filter { pack in
-            if pack.id.hasPrefix("bundled:debug/") { return true }
-            return true
-        }
-    }
-
     func menus(_ pack: Pack) -> [MenuFile] {
         if let cached = menuCache[pack.id] { return cached }
         let menus = pack.menus(appleHealthTypes: appleTypes)
@@ -116,10 +109,6 @@ final class PackStore {
     }
 
     func delete(_ pack: Pack) {
-        guard !pack.isBundled else {
-            setEnabled(pack, false)
-            return
-        }
         try? FileManager.default.removeItem(at: pack.root.deletingLastPathComponent())
         settings.prefs.enabledPacks?.removeAll { $0 == pack.id }
         reload()

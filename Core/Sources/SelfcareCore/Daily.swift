@@ -60,8 +60,6 @@ public struct SetLine: Hashable, Sendable, Identifiable {
     public var comment: String?
     public var marker: HealthMarker?
     public var problem: String?
-
-    public var isImported: Bool { marker != nil }
 }
 
 public struct Entry: Hashable, Sendable, Identifiable {
@@ -80,7 +78,6 @@ public struct Entry: Hashable, Sendable, Identifiable {
     public var problem: String?
 
     public var isImported: Bool { marker != nil || sets.contains { $0.marker != nil } }
-    public var isPlan: Bool { checkbox == nil && sets.isEmpty }
     public var hasLineProblem: Bool { problem != nil || sets.contains { $0.problem != nil } }
 }
 
