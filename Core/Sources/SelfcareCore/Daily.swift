@@ -242,9 +242,10 @@ public struct DailyDocument: Sendable, Hashable {
                     if g[1] == nil {
                         set.problem = "Value line needs a checkbox"
                     } else {
-                        switch ValueParser.parse(parts.valueText) {
-                        case let .success(v): set.value = v
-                        case .failure: set.problem = "Unreadable value"
+                        if let v = ValueParser.parse(parts.valueText) {
+                            set.value = v
+                        } else {
+                            set.problem = "Unreadable value"
                         }
                     }
                     current!.sets.append(set)
@@ -263,9 +264,10 @@ public struct DailyDocument: Sendable, Hashable {
                 let rest = String(content.dropFirst(linkText.count))
                 let parts = LineParts.split(rest)
                 var entry = Entry(line: i, endLine: i, raw: line, name: name.trimmingCharacters(in: .whitespaces), link: linkText, checkbox: g[0].map { $0 != " " }, valueText: parts.valueText, value: nil, comment: parts.comment, marker: parts.marker, sets: [], problem: nil)
-                switch ValueParser.parse(parts.valueText) {
-                case let .success(v): entry.value = v
-                case .failure: entry.problem = "Unreadable value"
+                if let v = ValueParser.parse(parts.valueText) {
+                    entry.value = v
+                } else {
+                    entry.problem = "Unreadable value"
                 }
                 current = entry
             } else {

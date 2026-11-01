@@ -177,7 +177,7 @@ struct DirectInput: View {
             if !raw.contains(":"), let minutes = Double(raw) {
                 q = .duration(Int((minutes * 60).rounded()))
             } else {
-                q = ValueParser.value(raw)?[.duration]
+                q = ValueParser.parse(raw)?[.duration]
             }
         case .bloodPressure:
             guard let n = Int(raw), case let .bloodPressure(a, b) = quantity ?? .zero(.bloodPressure, units: units) else { q = nil; break }
@@ -185,7 +185,7 @@ struct DirectInput: View {
         case .reps:
             q = Int(raw).map { .reps(max(0, $0)) }
         default:
-            q = ValueParser.value(raw + unit)?[field]
+            q = ValueParser.parse(raw + unit)?[field]
         }
         if let q {
             onChange(q)

@@ -249,29 +249,21 @@ public struct Value: Hashable, Sendable {
     }
 }
 
-public enum ValueError: Error, Equatable, Sendable {
-    case unreadable(String)
-}
-
 public enum ValueParser {
-    public static func parse(_ raw: String) -> Result<Value, ValueError> {
+    public static func parse(_ raw: String) -> Value? {
         let text = raw.precomposedStringWithCompatibilityMapping.trimmingCharacters(in: .whitespaces)
-        if text.isEmpty { return .success(Value()) }
+        if text.isEmpty { return Value() }
         let tokens = text.split(omittingEmptySubsequences: false, whereSeparator: { "×xX*".contains($0) })
             .map { $0.trimmingCharacters(in: .whitespaces) }
         var seen = Set<Field>()
         var result: [Quantity] = []
         for token in tokens {
-            guard let q = quantity(token) else { return .failure(.unreadable(raw)) }
-            if seen.contains(q.field) { return .failure(.unreadable(raw)) }
+            guard let q = quantity(token) else { return nil }
+            if seen.contains(q.field) { return nil }
             seen.insert(q.field)
             result.append(q)
         }
-        return .success(Value(result))
-    }
-
-    public static func value(_ raw: String) -> Value? {
-        try? parse(raw).get()
+        return Value(result)
     }
 
     static func quantity(_ token: String) -> Quantity? {
