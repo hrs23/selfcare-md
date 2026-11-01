@@ -13,10 +13,24 @@ public struct WorkoutSplit: Sendable, Hashable {
         self.intervals = intervals
     }
 
-    public static func pick(laps: [DateInterval], segments: [DateInterval], activities: [DateInterval]) -> WorkoutSplit? {
-        if !laps.isEmpty { return WorkoutSplit(source: .laps, intervals: laps) }
-        if !segments.isEmpty { return WorkoutSplit(source: .segments, intervals: segments) }
-        if activities.count > 1 { return WorkoutSplit(source: .activities, intervals: activities) }
+    public static func forDayLines(laps: [DateInterval], segments: [DateInterval], activities: [DateInterval]) -> WorkoutSplit? {
+        first([.activities, .segments, .laps], laps: laps, segments: segments, activities: activities)
+    }
+
+    public static func forLaps(laps: [DateInterval], segments: [DateInterval], activities: [DateInterval]) -> WorkoutSplit? {
+        first([.laps, .segments, .activities], laps: laps, segments: segments, activities: activities)
+    }
+
+    static func first(_ order: [Source], laps: [DateInterval], segments: [DateInterval], activities: [DateInterval]) -> WorkoutSplit? {
+        for source in order {
+            let intervals: [DateInterval]
+            switch source {
+            case .laps: intervals = laps
+            case .segments: intervals = segments
+            case .activities: intervals = activities.count > 1 ? activities : []
+            }
+            if !intervals.isEmpty { return WorkoutSplit(source: source, intervals: intervals) }
+        }
         return nil
     }
 }

@@ -139,11 +139,16 @@ struct HealthPlacementTests {
         let laps = spans(3, offset: 0)
         let segments = spans(2, offset: 1000)
         let activities = spans(2, offset: 2000)
-        #expect(WorkoutSplit.pick(laps: laps, segments: segments, activities: activities) == WorkoutSplit(source: .laps, intervals: laps))
-        #expect(WorkoutSplit.pick(laps: [], segments: segments, activities: activities) == WorkoutSplit(source: .segments, intervals: segments))
-        #expect(WorkoutSplit.pick(laps: [], segments: [], activities: activities) == WorkoutSplit(source: .activities, intervals: activities))
-        #expect(WorkoutSplit.pick(laps: [], segments: [], activities: spans(1, offset: 0)) == nil)
-        #expect(WorkoutSplit.pick(laps: [], segments: [], activities: []) == nil)
+        let one = spans(1, offset: 0)
+        #expect(WorkoutSplit.forDayLines(laps: laps, segments: segments, activities: activities) == WorkoutSplit(source: .activities, intervals: activities))
+        #expect(WorkoutSplit.forDayLines(laps: laps, segments: segments, activities: one) == WorkoutSplit(source: .segments, intervals: segments))
+        #expect(WorkoutSplit.forDayLines(laps: laps, segments: [], activities: one) == WorkoutSplit(source: .laps, intervals: laps))
+        #expect(WorkoutSplit.forDayLines(laps: [], segments: [], activities: one) == nil)
+        #expect(WorkoutSplit.forLaps(laps: laps, segments: segments, activities: activities) == WorkoutSplit(source: .laps, intervals: laps))
+        #expect(WorkoutSplit.forLaps(laps: [], segments: segments, activities: activities) == WorkoutSplit(source: .segments, intervals: segments))
+        #expect(WorkoutSplit.forLaps(laps: [], segments: [], activities: activities) == WorkoutSplit(source: .activities, intervals: activities))
+        #expect(WorkoutSplit.forLaps(laps: [], segments: [], activities: one) == nil)
+        #expect(WorkoutSplit.forLaps(laps: [], segments: [], activities: []) == nil)
     }
 
     @Test func tcx() {

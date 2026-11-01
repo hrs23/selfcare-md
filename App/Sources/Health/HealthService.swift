@@ -366,7 +366,7 @@ final class HealthService {
         let hr = w.statistics(for: HKQuantityType(.heartRate))?.averageQuantity()?.doubleValue(for: .count().unitDivided(by: .minute()))
         let whole = workoutQuantities(duration: w.duration, meters: distance(of: w.allStatistics), heartRate: hr)
         var segments: [[Quantity]] = []
-        if let split = Self.split(w) {
+        if let split = Self.split(w, WorkoutSplit.forDayLines) {
             if split.source == .activities {
                 for a in w.workoutActivities {
                     let ahr = a.statistics(for: HKQuantityType(.heartRate))?.averageQuantity()?.doubleValue(for: .count().unitDivided(by: .minute()))
@@ -381,12 +381,12 @@ final class HealthService {
         return HealthRecord(type: type, uuid: w.uuid.uuidString, date: DayDate.string(w.endDate), quantities: whole, segments: segments)
     }
 
-    static func split(_ w: HKWorkout) -> WorkoutSplit? {
+    static func split(_ w: HKWorkout, _ pick: ([DateInterval], [DateInterval], [DateInterval]) -> WorkoutSplit?) -> WorkoutSplit? {
         let events = w.workoutEvents ?? []
-        return WorkoutSplit.pick(
-            laps: events.filter { $0.type == .lap }.map(\.dateInterval),
-            segments: events.filter { $0.type == .segment }.map(\.dateInterval),
-            activities: w.workoutActivities.map { DateInterval(start: $0.startDate, end: max($0.endDate ?? $0.startDate, $0.startDate)) }
+        return pick(
+            events.filter { $0.type == .lap }.map(\.dateInterval),
+            events.filter { $0.type == .segment }.map(\.dateInterval),
+            w.workoutActivities.map { DateInterval(start: $0.startDate, end: max($0.endDate ?? $0.startDate, $0.startDate)) }
         )
     }
 
@@ -460,7 +460,7 @@ final class HealthService {
         let sport = TCX.sport(for: type)
         let cadence = sport == "Biking" ? await samples(.cyclingCadence, w, unit: .count().unitDivided(by: .minute())) : []
         let locs = await locations(w)
-        let laps = Self.split(w)?.intervals ?? []
+        let laps = Self.split(w, WorkoutSplit.forLaps)?.intervals ?? []
         let calories = w.statistics(for: HKQuantityType(.activeEnergyBurned))?.sumQuantity()?.doubleValue(for: .kilocalorie())
         let input = TCXInput(
             sport: sport, start: w.startDate, end: w.endDate, laps: laps, calories: calories,
