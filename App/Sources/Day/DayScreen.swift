@@ -5,6 +5,7 @@ import UIKit
 struct DayScreen: View {
     @Environment(AppModel.self) private var app
     @Environment(\.scenePhase) private var scenePhase
+    @State private var wasInBackground = false
     @State private var store: DayStore?
     @State private var sheet: DaySheet?
 
@@ -32,7 +33,12 @@ struct DayScreen: View {
             if tab != .day { store?.clearAllHistory() }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { store?.clearAllHistory() }
+            if phase == .background {
+                wasInBackground = true
+            } else if phase == .active, wasInBackground {
+                wasInBackground = false
+                store?.clearAllHistory()
+            }
         }
     }
 
