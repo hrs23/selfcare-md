@@ -263,6 +263,13 @@ struct SyncTests {
     }
 }
 
+struct HTTPErrorTests {
+    @Test func insecureConnectionAsksForHTTPS() {
+        #expect(HTTP.mapped(URLError(.appTransportSecurityRequiresSecureConnection)) as? SyncError == .needsHTTPS)
+        #expect((HTTP.mapped(URLError(.timedOut)) as? URLError)?.code == .timedOut)
+    }
+}
+
 struct PackAndToolTests {
     func importPack(_ name: String, image: UInt8) throws -> Pack {
         let data = Zip.write([

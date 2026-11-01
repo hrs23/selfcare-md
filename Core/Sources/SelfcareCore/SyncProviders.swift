@@ -7,6 +7,7 @@ public enum SyncError: Error, LocalizedError, Equatable {
     case badResponse
     case busy
     case massDeletion(local: Int, remote: Int)
+    case needsHTTPS
 
     public var errorDescription: String? {
         switch self {
@@ -20,6 +21,7 @@ public enum SyncError: Error, LocalizedError, Equatable {
         case .badResponse: "Unexpected server response"
         case .busy: "Sync is already running"
         case let .massDeletion(local, remote): "Sync paused: it would delete \(local) files on this device and \(remote) on the server"
+        case .needsHTTPS: "This server needs an https:// URL"
         }
     }
 }
@@ -146,9 +148,19 @@ enum HTTP {
     static func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         var request = request
         request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
-        let (data, response) = try await uncached.data(for: request)
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await uncached.data(for: request)
+        } catch {
+            throw mapped(error)
+        }
         guard let http = response as? HTTPURLResponse else { throw SyncError.badResponse }
         return (data, http)
+    }
+
+    static func mapped(_ error: Error) -> Error {
+        if let error = error as? URLError, error.code == .appTransportSecurityRequiresSecureConnection { return SyncError.needsHTTPS }
+        return error
     }
 }
 
