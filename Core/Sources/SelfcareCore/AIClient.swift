@@ -373,13 +373,16 @@ struct ToolCallAccumulator {
 }
 
 public enum ModelChooser {
+    static let excluded = try! NSRegularExpression(pattern: #"\d{4}-\d{2}-\d{2}|\d{8}|preview|-pro\b|-mini\b|-nano\b|lite|image|tts|audio|realtime|embedding|search|transcribe|live|exp"#)
+    static let number = try! NSRegularExpression(pattern: #"\d+(?:\.\d+)?"#)
+
     public static func pick(family: String, from models: [String], fallback: String) -> String {
         let lower = family.lowercased()
         let matches = models.filter { m in
             let l = m.lowercased()
             guard l.contains(lower) else { return false }
             if l.contains(":") { return false }
-            if l.range(of: #"\d{4}-\d{2}-\d{2}|\d{8}|preview|-pro\b|-mini\b|-nano\b|lite|image|tts|audio|realtime|embedding|search|transcribe|live|exp"#, options: .regularExpression) != nil { return false }
+            if excluded.firstMatch(in: l, range: NSRange(location: 0, length: (l as NSString).length)) != nil { return false }
             return true
         }
         guard !matches.isEmpty else { return fallback }
@@ -387,9 +390,8 @@ public enum ModelChooser {
     }
 
     public static func versionKey(_ id: String) -> [Double] {
-        let regex = try! NSRegularExpression(pattern: #"\d+(?:\.\d+)?"#)
         let ns = id as NSString
-        let nums = regex.matches(in: id, range: NSRange(location: 0, length: ns.length)).compactMap { Double(ns.substring(with: $0.range)) }
+        let nums = number.matches(in: id, range: NSRange(location: 0, length: ns.length)).compactMap { Double(ns.substring(with: $0.range)) }
         return nums + [-Double(id.count)]
     }
 }

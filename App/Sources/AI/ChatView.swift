@@ -119,6 +119,7 @@ struct ChatView: View {
     }
 
     var body: some View {
+        let matches = mentionMatches
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
@@ -153,10 +154,10 @@ struct ChatView: View {
                     withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
                 }
             }
-            if !mentionMatches.isEmpty {
+            if !matches.isEmpty {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-                        ForEach(mentionMatches, id: \.self) { path in
+                        ForEach(matches, id: \.self) { path in
                             Button {
                                 if !session.attachments.contains(path) { session.attachments.append(path) }
                                 var parts = session.input.split(separator: " ", omittingEmptySubsequences: false)
