@@ -63,7 +63,7 @@ struct MarkdownEditorView: View {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }.disabled(!dirty || readError != nil || templateError != nil)
+                    Button("Save") { save() }.disabled(!dirty || readError != nil)
                 }
             }
             .confirmationDialog("Unsaved changes", isPresented: $confirmLeave, titleVisibility: .visible) {
@@ -128,11 +128,13 @@ struct MarkdownEditorView: View {
         }
     }
 
-    func defaultText() throws -> String {
-        if path.hasPrefix("daily/"), path.hasSuffix(".md") {
-            let date = String((path as NSString).lastPathComponent.dropLast(3))
-            return try app.newDaily(date).text
-        }
+    var dailyDate: String? {
+        guard path.hasPrefix("daily/"), path.hasSuffix(".md") else { return nil }
+        return String((path as NSString).lastPathComponent.dropLast(3))
+    }
+
+    func defaultText() -> String {
+        if let dailyDate { return app.newDaily(dailyDate).text }
         if path == Vault.templatePath { return "## Selfcare\n\n" }
         return ""
     }
@@ -158,11 +160,8 @@ struct MarkdownEditorView: View {
 
     func reload(_ disk: String?) {
         baseline = disk
-        templateError = nil
-        var current = disk ?? ""
-        if disk == nil, readError == nil {
-            do { current = try defaultText() } catch { templateError = error.localizedDescription }
-        }
+        templateError = disk == nil && dailyDate == app.today() ? app.templateProblem() : nil
+        let current = disk ?? (readError == nil ? defaultText() : "")
         text = current
         original = current
         externalChange = false
@@ -170,7 +169,7 @@ struct MarkdownEditorView: View {
 
     @discardableResult
     func save() -> Bool {
-        if let error = readError ?? templateError {
+        if let error = readError {
             saveError = error
             return false
         }

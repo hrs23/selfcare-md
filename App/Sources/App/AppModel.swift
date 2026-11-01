@@ -137,17 +137,26 @@ final class AppModel {
         return (DailyDocument(text: text), false)
     }
 
-    func newDaily(_ date: String) throws -> DailyDocument {
+    func templateProblem() -> String? {
+        do {
+            _ = try template()
+            return nil
+        } catch {
+            return error.localizedDescription
+        }
+    }
+
+    func newDaily(_ date: String) -> DailyDocument {
         if date == today() {
-            return DailyCopy.newDaily(date: date, template: try template(), record: record)
+            return DailyCopy.newDaily(date: date, template: try? template(), record: record)
         }
         return DailyDocument.new(date: date)
     }
 
-    func ensureTodayCopied() throws {
+    func ensureTodayCopied() {
         let date = today()
         guard !vault.exists(Vault.dailyPath(date)) else { return }
-        let doc = try newDaily(date)
+        let doc = newDaily(date)
         guard !doc.entries.isEmpty else { return }
         try? vault.write(Vault.dailyPath(date), doc.text)
         revision += 1
@@ -229,7 +238,7 @@ final class AppModel {
         if changedDay {
             requestedDay = today
         }
-        try? ensureTodayCopied()
+        ensureTodayCopied()
         Task {
             await health.importAutomatically()
             await sync.run(.automatic)
