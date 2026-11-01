@@ -18,8 +18,7 @@ public enum HealthMarker: Hashable, Sendable {
 
     public var comment: String {
         switch self {
-        case let .record(id): "<!-- apple-health:\(id) -->"
-        case let .aggregate(c): "<!-- apple-health:\(c) -->"
+        case let .record(id), let .aggregate(id): "<!-- apple-health:\(id) -->"
         }
     }
 
@@ -241,12 +240,10 @@ public struct DailyDocument: Sendable, Hashable {
                     var set = SetLine(line: i, raw: line, checked: g[1].map { $0 != " " } ?? false, valueText: parts.valueText, value: nil, comment: parts.comment, marker: parts.marker, problem: nil)
                     if g[1] == nil {
                         set.problem = "Value line needs a checkbox"
+                    } else if let v = ValueParser.parse(parts.valueText) {
+                        set.value = v
                     } else {
-                        if let v = ValueParser.parse(parts.valueText) {
-                            set.value = v
-                        } else {
-                            set.problem = "Unreadable value"
-                        }
+                        set.problem = "Unreadable value"
                     }
                     current!.sets.append(set)
                 } else {
@@ -263,10 +260,8 @@ public struct DailyDocument: Sendable, Hashable {
                 let linkText = "[[\(name)\(link[1] ?? "")]]"
                 let rest = String(content.dropFirst(linkText.count))
                 let parts = LineParts.split(rest)
-                var entry = Entry(line: i, endLine: i, raw: line, name: name.trimmingCharacters(in: .whitespaces), link: linkText, checkbox: g[0].map { $0 != " " }, valueText: parts.valueText, value: nil, comment: parts.comment, marker: parts.marker, sets: [], problem: nil)
-                if let v = ValueParser.parse(parts.valueText) {
-                    entry.value = v
-                } else {
+                var entry = Entry(line: i, endLine: i, raw: line, name: name.trimmingCharacters(in: .whitespaces), link: linkText, checkbox: g[0].map { $0 != " " }, valueText: parts.valueText, value: ValueParser.parse(parts.valueText), comment: parts.comment, marker: parts.marker, sets: [], problem: nil)
+                if entry.value == nil {
                     entry.problem = "Unreadable value"
                 }
                 current = entry
@@ -285,16 +280,6 @@ public struct DailyDocument: Sendable, Hashable {
                 e.problem = "Menu line has both a checkbox and value lines"
             } else if !e.valueText.isEmpty {
                 e.problem = "Menu line has both a value and value lines"
-            }
-        }
-    }
-
-    public var hasLineProblems: Bool {
-        items.contains {
-            switch $0 {
-            case let .entry(e): e.hasLineProblem
-            case .raw: true
-            case .heading: false
             }
         }
     }

@@ -198,13 +198,13 @@ public final class WebDAVProvider: SyncProvider, @unchecked Sendable {
         guard response.statusCode == 207 else { throw SyncError.http(response.statusCode, path.isEmpty ? "/" : path) }
         let parser = MultistatusParser(data: data)
         let basePath = base.path.hasSuffix("/") ? base.path : base.path + "/"
+        let decodedBase = basePath.removingPercentEncoding ?? basePath
         return parser.parse().compactMap { res in
             var href = res.href
             if let u = URL(string: href), u.host != nil { href = u.path }
             href = href.removingPercentEncoding ?? href
-            let decodedBase = basePath.removingPercentEncoding ?? basePath
             guard href.hasPrefix(decodedBase) || href + "/" == decodedBase else { return nil }
-            var rel = href.count >= decodedBase.count ? String(href.dropFirst(decodedBase.count)) : ""
+            var rel = String(href.dropFirst(decodedBase.count))
             if rel.hasSuffix("/") { rel.removeLast() }
             return Resource(path: rel, isCollection: res.collection, etag: res.etag, modified: res.modified, length: res.length)
         }
@@ -379,13 +379,10 @@ public final class S3Provider: SyncProvider, @unchecked Sendable {
             path = "/" + (key.map { Self.encode($0, slash: true) } ?? "")
         } else {
             host = endpoint.host! + (endpoint.port.map { ":\($0)" } ?? "")
-            let basePath = endpoint.path.isEmpty ? "" : endpoint.path
-            path = basePath + "/" + Self.encode(config.bucket, slash: false) + (key.map { "/" + Self.encode($0, slash: true) } ?? "")
+            path = endpoint.path + "/" + Self.encode(config.bucket, slash: false) + (key.map { "/" + Self.encode($0, slash: true) } ?? "")
         }
         let encoded: [(String, String)] = query.map { pair in (Self.encode(pair.0, slash: false), Self.encode(pair.1, slash: false)) }
-        let sortedPairs = encoded.sorted { (a: (String, String), b: (String, String)) -> Bool in
-            a.0 == b.0 ? a.1 < b.1 : a.0 < b.0
-        }
+        let sortedPairs = encoded.sorted(by: <)
         let canonicalQuery = sortedPairs.map { pair in pair.0 + "=" + pair.1 }.joined(separator: "&")
         let scheme = endpoint.scheme ?? "https"
         var comps = scheme + "://" + host + path

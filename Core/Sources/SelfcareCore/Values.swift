@@ -294,7 +294,7 @@ public enum ValueParser {
         let isInteger = !sawDot
         switch unit {
         case "":
-            guard isInteger, !negative, let n = Int(numberText.replacingOccurrences(of: "+", with: "")) else { return nil }
+            guard isInteger, !negative, let n = Int(numberText) else { return nil }
             return .reps(n)
         case "kg": return .weight(number, .kg)
         case "lb", "lbs": return .weight(number, .lb)
@@ -307,7 +307,7 @@ public enum ValueParser {
         case "m": return .distance(number, .m)
         case "yd": return .distance(number, .yd)
         case "s":
-            guard isInteger, let n = Int(numberText.replacingOccurrences(of: "+", with: "")) else { return nil }
+            guard isInteger, let n = Int(numberText) else { return nil }
             return .duration(n)
         case "bpm": return .heartRate(number)
         case "%": return .percent(number)
@@ -358,7 +358,6 @@ public enum NumberText {
             }
             if text.hasSuffix(".") { text.removeLast() }
         }
-        if text == "-0" { text = "0" }
         return text
     }
 }

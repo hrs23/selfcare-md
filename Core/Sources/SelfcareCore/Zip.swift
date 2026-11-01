@@ -199,7 +199,7 @@ public enum Zip {
 
     public static func safePath(_ path: String) throws -> String {
         let p = path.replacingOccurrences(of: "\\", with: "/")
-        if p.hasPrefix("/") || p.contains(":") && p.first != nil && p.dropFirst().first == ":" { throw ZipError.unsafePath(path) }
+        if p.hasPrefix("/") || p.dropFirst().first == ":" { throw ZipError.unsafePath(path) }
         let parts = p.split(separator: "/", omittingEmptySubsequences: true)
         if parts.contains(where: { $0 == ".." }) { throw ZipError.unsafePath(path) }
         return parts.filter { $0 != "." }.joined(separator: "/")

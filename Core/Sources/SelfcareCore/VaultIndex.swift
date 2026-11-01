@@ -26,7 +26,7 @@ public final class VaultIndex: @unchecked Sendable {
         var fresh: [String: (Date?, DailyDocument)] = [:]
         for date in dates {
             let path = Vault.dailyPath(date)
-            let modified = vault.modified(path)
+            let modified = vault.info(path)?.modified
             if let cached = dailyCache[path], cached.0 == modified, modified != nil {
                 fresh[path] = cached
                 result.append((date, cached.1))
@@ -108,7 +108,7 @@ public final class VaultIndex: @unchecked Sendable {
         func classify(_ path: String, _ doc: DailyDocument) {
             if let p = doc.fileProblem {
                 result.append(VaultProblem(path: path, message: p))
-            } else if doc.hasLineProblems {
+            } else if !doc.problemLines.isEmpty {
                 result.append(VaultProblem(path: path, message: "Lines with problems"))
             }
         }

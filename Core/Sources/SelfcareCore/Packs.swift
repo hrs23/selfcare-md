@@ -105,7 +105,7 @@ public enum PackInstaller {
             let existing = vault.menuFileName(for: name)
             if existing != nil && !replacing { continue }
             let target = Vault.menuPath(existing ?? name)
-            try vault.writeRaw(target, VaultText.normalized(text))
+            try vault.write(target, text)
             let menu = MenuFile(name: name, text: text, appleHealthTypes: [])
             for ref in menu.imageReferences {
                 guard let source = ImageResolver.resolve(ref, fromDirectory: "menus", files: packFiles) else { continue }

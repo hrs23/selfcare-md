@@ -383,7 +383,6 @@ public enum ModelChooser {
             if excluded.firstMatch(in: l, range: NSRange(location: 0, length: (l as NSString).length)) != nil { return false }
             return true
         }
-        guard !matches.isEmpty else { return fallback }
         return matches.max { versionKey($0).lexicographicallyPrecedes(versionKey($1)) } ?? fallback
     }
 
