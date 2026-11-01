@@ -343,17 +343,24 @@ public final class S3Provider: SyncProvider, @unchecked Sendable {
     public let config: S3Config
     let endpoint: URL
     let virtualHost: Bool
+    let host: String
 
     public init(config: S3Config) throws {
         var e = config.endpoint.trimmingCharacters(in: .whitespaces)
         if e.isEmpty { e = "https://s3.\(config.region.isEmpty ? "us-east-1" : config.region).amazonaws.com" }
         if !e.contains("://") { e = "https://" + e }
         while e.hasSuffix("/") { e.removeLast() }
-        guard let u = URL(string: e), u.host != nil else { throw SyncError.invalidConfig("Invalid endpoint") }
+        guard let u = URL(string: e), let endpointHost = u.host else { throw SyncError.invalidConfig("Invalid endpoint") }
         guard !config.bucket.isEmpty else { throw SyncError.invalidConfig("Bucket is empty") }
         self.config = config
         self.endpoint = u
-        self.virtualHost = u.host!.hasSuffix("amazonaws.com")
+        self.virtualHost = endpointHost.hasSuffix("amazonaws.com")
+        if virtualHost {
+            host = "\(config.bucket).\(endpointHost)"
+            guard URL(string: (u.scheme ?? "https") + "://" + host + "/")?.host == host else { throw SyncError.invalidConfig("Invalid bucket") }
+        } else {
+            host = endpointHost + (u.port.map { ":\($0)" } ?? "")
+        }
     }
 
     var keyPrefix: String {
@@ -367,14 +374,11 @@ public final class S3Provider: SyncProvider, @unchecked Sendable {
         return s.addingPercentEncoding(withAllowedCharacters: allowed) ?? s
     }
 
-    func signedRequest(method: String, key: String?, query: [(String, String)], body: Data = Data(), date: Date = Date()) -> URLRequest {
-        let host: String
-        var path: String
+    func signedRequest(method: String, key: String?, query: [(String, String)], body: Data = Data(), date: Date = Date()) throws -> URLRequest {
+        let path: String
         if virtualHost {
-            host = "\(config.bucket).\(endpoint.host!)"
             path = "/" + (key.map { Self.encode($0, slash: true) } ?? "")
         } else {
-            host = endpoint.host! + (endpoint.port.map { ":\($0)" } ?? "")
             path = endpoint.path + "/" + Self.encode(config.bucket, slash: false) + (key.map { "/" + Self.encode($0, slash: true) } ?? "")
         }
         let encoded: [(String, String)] = query.map { pair in (Self.encode(pair.0, slash: false), Self.encode(pair.1, slash: false)) }
@@ -383,7 +387,8 @@ public final class S3Provider: SyncProvider, @unchecked Sendable {
         let scheme = endpoint.scheme ?? "https"
         var comps = scheme + "://" + host + path
         if !canonicalQuery.isEmpty { comps += "?" + canonicalQuery }
-        var r = URLRequest(url: URL(string: comps)!)
+        guard let url = URL(string: comps) else { throw SyncError.invalidConfig("Invalid endpoint") }
+        var r = URLRequest(url: url)
         r.httpMethod = method
         r.timeoutInterval = 60
         if !body.isEmpty || method == "PUT" { r.httpBody = body }
@@ -393,7 +398,7 @@ public final class S3Provider: SyncProvider, @unchecked Sendable {
     }
 
     public func testConnection() async throws {
-        let r = signedRequest(method: "GET", key: nil, query: [("list-type", "2"), ("max-keys", "1"), ("prefix", keyPrefix)])
+        let r = try signedRequest(method: "GET", key: nil, query: [("list-type", "2"), ("max-keys", "1"), ("prefix", keyPrefix)])
         let (_, response) = try await HTTP.send(r)
         try response.check(config.bucket)
     }

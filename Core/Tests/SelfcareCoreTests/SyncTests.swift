@@ -248,6 +248,16 @@ struct WebDAVRequestTests {
     }
 }
 
+struct S3RequestTests {
+    @Test func invalidVirtualHostBucket() throws {
+        for bucket in ["my bucket", "a/b", "a@b", "a:b"] {
+            #expect(throws: SyncError.self) { try S3Provider(config: S3Config(endpoint: "", region: "eu-west-1", bucket: bucket, prefix: "", accessKey: "k", secret: "s")) }
+        }
+        let dotted = try S3Provider(config: S3Config(endpoint: "", region: "eu-west-1", bucket: "my.bucket", prefix: "", accessKey: "k", secret: "s"))
+        #expect(try dotted.signedRequest(method: "GET", key: "a.md", query: []).url?.host == "my.bucket.s3.eu-west-1.amazonaws.com")
+    }
+}
+
 struct WebDAVIntegrationTests {
     @Test(.enabled(if: ProcessInfo.processInfo.environment["SELFCARE_WEBDAV_URL"] != nil))
     func syncAgainstServer() async throws {
