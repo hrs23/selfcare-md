@@ -220,16 +220,13 @@ public final class ChatClient: @unchecked Sendable {
     }
 
     public func ping(model: String) async throws {
+        func body(_ key: String) -> [String: Any] {
+            ["model": model, "messages": [["role": "user", "content": "Reply with OK."]], key: 16]
+        }
         do {
-            let body: [String: Any] = ["model": model, "messages": [["role": "user", "content": "Reply with OK."]], "max_completion_tokens": 16]
-            let (data, response) = try await session.data(for: request("chat/completions", body: body))
+            var (data, response) = try await session.data(for: request("chat/completions", body: body("max_completion_tokens")))
             if (response as? HTTPURLResponse)?.statusCode == 400, String(decoding: data, as: UTF8.self).contains("max_completion_tokens") {
-                let retry: [String: Any] = ["model": model, "messages": [["role": "user", "content": "Reply with OK."]], "max_tokens": 16]
-                let (d2, r2) = try await session.data(for: request("chat/completions", body: retry))
-                guard let h2 = r2 as? HTTPURLResponse, (200..<300).contains(h2.statusCode) else {
-                    throw Self.classify(status: (r2 as? HTTPURLResponse)?.statusCode ?? 0, body: String(decoding: d2, as: UTF8.self))
-                }
-                return
+                (data, response) = try await session.data(for: request("chat/completions", body: body("max_tokens")))
             }
             try Self.check(response, data)
         } catch {
