@@ -5,12 +5,14 @@ public enum ZipError: Error, LocalizedError, Equatable {
     case broken
     case unsupported
     case unsafePath(String)
+    case tooLarge
 
     public var errorDescription: String? {
         switch self {
         case .broken: "The archive is broken"
         case .unsupported: "The archive uses an unsupported format"
         case let .unsafePath(p): "The archive has a path outside the pack: \(p)"
+        case .tooLarge: "The archive is too large"
         }
     }
 }
@@ -71,6 +73,10 @@ public struct ZipEntry: Sendable, Hashable {
 
 public enum Zip {
     public static func read(_ data: Data) throws -> [ZipEntry] {
+        try read(data, maxEntrySize: 50 << 20, maxTotalSize: 200 << 20)
+    }
+
+    static func read(_ data: Data, maxEntrySize: Int, maxTotalSize: Int) throws -> [ZipEntry] {
         let bytes = [UInt8](data)
         func u16(_ o: Int) throws -> Int {
             guard o + 2 <= bytes.count else { throw ZipError.broken }
@@ -96,6 +102,7 @@ public enum Zip {
         var offset = try u32(eocd + 16)
         if count == 0xFFFF || offset == 0xFFFFFFFF { throw ZipError.unsupported }
         var entries: [ZipEntry] = []
+        var total = 0
         for _ in 0..<count {
             guard try u32(offset) == 0x02014B50 else { throw ZipError.broken }
             let flags = try u16(offset + 8)
@@ -103,6 +110,8 @@ public enum Zip {
             let crc = UInt32(try u32(offset + 16))
             let compressedSize = try u32(offset + 20)
             let size = try u32(offset + 24)
+            total += size
+            guard size <= maxEntrySize, total <= maxTotalSize else { throw ZipError.tooLarge }
             let nameLength = try u16(offset + 28)
             let extraLength = try u16(offset + 30)
             let commentLength = try u16(offset + 32)
