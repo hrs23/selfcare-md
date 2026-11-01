@@ -147,6 +147,9 @@ struct PackDetailView: View {
                                         .font(.title3)
                                     MenuThumb(menu: menu, pack: pack)
                                     Text(menu.name).foregroundStyle(inVault && !selected ? .secondary : .primary)
+                                    if menu.hasProblem {
+                                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange).font(.caption)
+                                    }
                                     Spacer()
                                 }
                             }
