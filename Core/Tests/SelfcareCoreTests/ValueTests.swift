@@ -158,3 +158,12 @@ struct MenuTests {
         #expect(MenuName.validate("a#b") != nil)
     }
 }
+
+struct FrontmatterTests {
+    @Test func blankLineInsideBlockList() {
+        var file = MarkdownFile.parse("---\ntags:\n  - a\n\n  - b\n\nrecord: check\n---\nBody\n")
+        #expect(file.frontmatter?["tags"] == .list(["a", "b"]))
+        file.frontmatter?.set("record", .scalar("sets"))
+        #expect(file.text == "---\ntags:\n  - a\n\n  - b\n\nrecord: sets\n---\nBody\n")
+    }
+}
