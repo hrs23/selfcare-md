@@ -74,7 +74,7 @@ struct HealthSettingsView: View {
                     Toggle("Import automatically", isOn: Binding(get: { health.settings.autoImport }, set: { on in
                         Task { await health.setAutoImport(on) }
                     }))
-                    Button("Check access") {
+                    Button("Allow access in Health") {
                         Task {
                             do { try await health.requestAuthorization() } catch { app.alert = error.localizedDescription }
                         }
