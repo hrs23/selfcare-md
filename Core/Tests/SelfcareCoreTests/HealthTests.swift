@@ -131,6 +131,21 @@ struct HealthPlacementTests {
         #expect(Set(result.failed.keys) == ["2026-09-01", "2026-09-02"])
     }
 
+    @Test func workoutSplitOrder() {
+        let t = Date(timeIntervalSince1970: 1_790_000_000)
+        func spans(_ n: Int, offset: Double) -> [DateInterval] {
+            (0..<n).map { DateInterval(start: t.addingTimeInterval(offset + Double($0) * 60), duration: 60) }
+        }
+        let laps = spans(3, offset: 0)
+        let segments = spans(2, offset: 1000)
+        let activities = spans(2, offset: 2000)
+        #expect(WorkoutSplit.pick(laps: laps, segments: segments, activities: activities) == WorkoutSplit(source: .laps, intervals: laps))
+        #expect(WorkoutSplit.pick(laps: [], segments: segments, activities: activities) == WorkoutSplit(source: .segments, intervals: segments))
+        #expect(WorkoutSplit.pick(laps: [], segments: [], activities: activities) == WorkoutSplit(source: .activities, intervals: activities))
+        #expect(WorkoutSplit.pick(laps: [], segments: [], activities: spans(1, offset: 0)) == nil)
+        #expect(WorkoutSplit.pick(laps: [], segments: [], activities: []) == nil)
+    }
+
     @Test func tcx() {
         let start = Date(timeIntervalSince1970: 1_790_000_000)
         let input = TCXInput(sport: "Running", start: start, end: start.addingTimeInterval(600), laps: [], calories: 100, heartRate: [TCXSample(start: start.addingTimeInterval(5), end: start.addingTimeInterval(5), value: 140)], distance: [TCXSample(start: start, end: start.addingTimeInterval(60), value: 200)], cadence: [], locations: [TCXLocation(time: start.addingTimeInterval(5), latitude: 35.1, longitude: 139.2, altitude: 10)])
