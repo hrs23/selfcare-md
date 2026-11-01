@@ -191,7 +191,7 @@ struct SyncConnectForm: View {
             loaded = true
             if let initial {
                 fill(initial)
-                if case let .webdav(w) = initial {
+                if case .webdav = initial {
                     chosenURL = trimmedURL
                     Task { await loadCreates() }
                 }
