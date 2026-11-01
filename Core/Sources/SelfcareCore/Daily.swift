@@ -177,6 +177,9 @@ public struct DailyDocument: Sendable, Hashable {
                 if title == "Memo" && memoHeading == nil { memoHeading = i }
             }
         }
+        if let memoHeading {
+            memoEnd = sectionEnd(after: memoHeading)
+        }
         if selfcareHeadings.count > 1 {
             fileProblem = "More than one ## Selfcare"
             return
@@ -187,9 +190,6 @@ public struct DailyDocument: Sendable, Hashable {
         }
         selfcareHeading = start
         selfcareEnd = sectionEnd(after: start)
-        if let memoHeading {
-            memoEnd = sectionEnd(after: memoHeading)
-        }
         parseSelfcare()
     }
 
