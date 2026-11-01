@@ -193,13 +193,16 @@ public enum MenuName {
 }
 
 public enum MarkdownImages {
+    static let patterns = [
+        try! NSRegularExpression(pattern: #"!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)"#),
+        try! NSRegularExpression(pattern: #"!\[\[([^\]|#]+)(?:\|[^\]]*)?\]\]"#),
+    ]
+
     public static func references(in body: String) -> [String] {
         var refs: [String] = []
         let ns = body as NSString
-        let patterns = [#"!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)"#, #"!\[\[([^\]|#]+)(?:\|[^\]]*)?\]\]"#]
         var found: [(Int, String)] = []
-        for p in patterns {
-            guard let regex = try? NSRegularExpression(pattern: p) else { continue }
+        for regex in patterns {
             for m in regex.matches(in: body, range: NSRange(location: 0, length: ns.length)) {
                 var path = ns.substring(with: m.range(at: 1))
                 if path.hasPrefix("<"), path.hasSuffix(">") { path = String(path.dropFirst().dropLast()) }

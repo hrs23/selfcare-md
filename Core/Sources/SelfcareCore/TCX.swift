@@ -59,11 +59,15 @@ public enum TCX {
         }
     }
 
-    static func time(_ d: Date) -> String {
+    nonisolated(unsafe) static let formatter: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         f.timeZone = TimeZone(identifier: "UTC")
-        return f.string(from: d)
+        return f
+    }()
+
+    static func time(_ d: Date) -> String {
+        formatter.string(from: d)
     }
 
     static func num(_ v: Double, _ digits: Int = 2) -> String {

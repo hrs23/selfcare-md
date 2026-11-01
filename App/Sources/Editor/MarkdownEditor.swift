@@ -347,11 +347,11 @@ struct CodeEditor: UIViewRepresentable {
                 } else if line.hasPrefix("#") {
                     storage.addAttributes([.font: bold, .foregroundColor: UIColor.tintColor], range: range)
                 }
-                Self.apply(#"\[[ xX]\]"#, in: line, offset: location, storage: storage, attrs: [.foregroundColor: UIColor.systemGreen])
-                Self.apply(#"\[\[[^\]]+\]\]"#, in: line, offset: location, storage: storage, attrs: [.foregroundColor: UIColor.systemBlue])
-                Self.apply(#"<!--.*?-->"#, in: line, offset: location, storage: storage, attrs: [.foregroundColor: UIColor.tertiaryLabel])
+                Self.apply(Self.checkbox, in: line, offset: location, storage: storage, attrs: [.foregroundColor: UIColor.systemGreen])
+                Self.apply(Self.link, in: line, offset: location, storage: storage, attrs: [.foregroundColor: UIColor.systemBlue])
+                Self.apply(Self.comment, in: line, offset: location, storage: storage, attrs: [.foregroundColor: UIColor.tertiaryLabel])
                 if parent.marks.missing.contains(i) {
-                    Self.apply(#"\[\[[^\]]+\]\]"#, in: line, offset: location, storage: storage, attrs: [.foregroundColor: UIColor.systemOrange, .underlineStyle: NSUnderlineStyle.single.rawValue | NSUnderlineStyle.patternDot.rawValue])
+                    Self.apply(Self.link, in: line, offset: location, storage: storage, attrs: [.foregroundColor: UIColor.systemOrange, .underlineStyle: NSUnderlineStyle.single.rawValue | NSUnderlineStyle.patternDot.rawValue])
                 }
                 if parent.marks.problems.contains(i) {
                     storage.addAttribute(.backgroundColor, value: UIColor.systemOrange.withAlphaComponent(0.18), range: range)
@@ -363,8 +363,11 @@ struct CodeEditor: UIViewRepresentable {
             tv.typingAttributes = [.font: base, .foregroundColor: UIColor.label]
         }
 
-        static func apply(_ pattern: String, in line: String, offset: Int, storage: NSTextStorage, attrs: [NSAttributedString.Key: Any]) {
-            guard let regex = try? NSRegularExpression(pattern: pattern) else { return }
+        static let checkbox = try! NSRegularExpression(pattern: #"\[[ xX]\]"#)
+        static let link = try! NSRegularExpression(pattern: #"\[\[[^\]]+\]\]"#)
+        static let comment = try! NSRegularExpression(pattern: #"<!--.*?-->"#)
+
+        static func apply(_ regex: NSRegularExpression, in line: String, offset: Int, storage: NSTextStorage, attrs: [NSAttributedString.Key: Any]) {
             let ns = line as NSString
             for m in regex.matches(in: line, range: NSRange(location: 0, length: ns.length)) {
                 storage.addAttributes(attrs, range: NSRange(location: offset + m.range.location, length: m.range.length))
