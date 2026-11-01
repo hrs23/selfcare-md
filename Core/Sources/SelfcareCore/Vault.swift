@@ -165,10 +165,11 @@ public final class Vault: @unchecked Sendable {
                 result.append(rel(u))
             }
         } else {
-            let items = (try? fm.contentsOfDirectory(at: base, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])) ?? []
+            let items = (try? fm.contentsOfDirectory(at: base, includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey], options: [.skipsHiddenFiles])) ?? []
             for u in items {
-                let isDir = (try? u.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true
-                if isDir && !includeDirectories { continue }
+                let values = try? u.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+                if values?.isSymbolicLink == true { continue }
+                if values?.isDirectory == true && !includeDirectories { continue }
                 result.append(relative.isEmpty ? u.lastPathComponent : relative + "/" + u.lastPathComponent)
             }
         }

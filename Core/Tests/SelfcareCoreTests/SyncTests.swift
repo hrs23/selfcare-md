@@ -186,6 +186,16 @@ struct PackAndToolTests {
         #expect(try vault.readData("media/s.png") == Data([1]))
     }
 
+    @Test func menuNamesSkipSymlinks() throws {
+        let vault = tempVault()
+        try vault.write("menus/Squat.md", "x")
+        let outside = FileManager.default.temporaryDirectory.appendingPathComponent("outside-\(UUID().uuidString).md")
+        try Data("y".utf8).write(to: outside)
+        try FileManager.default.createSymbolicLink(at: vault.root.appendingPathComponent("menus/Link.md"), withDestinationURL: outside)
+        #expect(vault.menuNames() == ["Squat"])
+        #expect(vault.list("menus", recursive: false) == ["menus/Squat.md"])
+    }
+
     @Test func renameUpdatesLinks() throws {
         let vault = tempVault()
         try vault.write("menus/Squat.md", "---\nrecord: sets\nfields: [reps]\n---\n")
