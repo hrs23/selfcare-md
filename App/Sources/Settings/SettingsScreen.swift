@@ -201,7 +201,7 @@ struct FileViewer: View {
                 }
             } else {
                 ScrollView([.vertical, .horizontal]) {
-                    Text(app.vault.readIfExists(path) ?? "")
+                    Text((try? app.vault.read(path)) ?? "")
                         .font(.caption.monospaced())
                         .textSelection(.enabled)
                         .padding()

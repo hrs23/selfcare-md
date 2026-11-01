@@ -107,7 +107,7 @@ final class AppModel {
     }
 
     func template() -> DailyDocument? {
-        guard let text = vault.readIfExists(Vault.templatePath) else { return nil }
+        guard let text = try? vault.read(Vault.templatePath) else { return nil }
         return DailyDocument(text: text, kind: .template)
     }
 
