@@ -58,7 +58,7 @@ struct LibraryScreen: View {
         let name = trimmed.isEmpty ? "My Menus" : trimmed
         do {
             let data = try PackInstaller.export(name: name, menus: selection.sorted(), vault: app.vault)
-            let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(name).zip")
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent(PackInstaller.cleanName(name) + ".zip")
             try data.write(to: url, options: .atomic)
             shareURL = url
             selecting = false

@@ -183,7 +183,7 @@ public enum PackInstaller {
         return (root, cleanName(root))
     }
 
-    static func cleanName(_ name: String) -> String {
+    public static func cleanName(_ name: String) -> String {
         var n = name
         if n.lowercased().hasSuffix(".zip") { n = String(n.dropLast(4)) }
         n = n.replacingOccurrences(of: "/", with: "-")
