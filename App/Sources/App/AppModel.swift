@@ -193,8 +193,8 @@ final class AppModel {
     }
 
     func copyFromPack(_ pack: Pack, names: [String], replacing: Bool = false) throws {
+        defer { vaultChanged() }
         try PackInstaller.copy(menus: names, from: pack, to: vault, replacing: replacing)
-        vaultChanged()
     }
 
     func createMenuFromApple(_ type: String, name: String) throws {

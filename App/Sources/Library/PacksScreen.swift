@@ -153,6 +153,7 @@ struct PackDetailView: View {
                                     Spacer()
                                 }
                             }
+                            .disabled(menu.hasProblem)
                         }
                     }
                 }
@@ -168,7 +169,7 @@ struct PackDetailView: View {
                             } label: {
                                 Label(enabled ? "Disable" : "Enable", systemImage: enabled ? "minus.circle" : "checkmark.circle")
                             }
-                            let available = Set(menus.map(\.name).filter { !existing.contains($0.lowercased()) })
+                            let available = Set(menus.filter { !$0.hasProblem && !existing.contains($0.name.lowercased()) }.map(\.name))
                             let allSelected = !available.isEmpty && available.isSubset(of: selection)
                             Button {
                                 if allSelected { selection.subtract(available) } else { selection.formUnion(available) }

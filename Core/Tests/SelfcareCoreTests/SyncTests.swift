@@ -341,6 +341,20 @@ struct PackAndToolTests {
         #expect(try Zip.read(exported).map(\.path).sorted() == ["Out/media/s.png", "Out/menus/Squat.md"])
     }
 
+    @Test func copyWritesNothingWhenAnyMenuIsUnreadable() throws {
+        let data = Zip.write([
+            ZipEntry(path: "P/menus/A.md", data: Data("---\nrecord: check\n---\n".utf8)),
+            ZipEntry(path: "P/menus/B.md", data: Data([0xFF, 0xFE, 0x00])),
+            ZipEntry(path: "P/menus/C.md", data: Data("---\nrecord: check\n---\n".utf8)),
+        ])
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let pack = Pack(id: "P", name: "P", root: try PackInstaller.importZip(data, suggestedName: "P.zip", into: dir), isBundled: false, language: nil)
+        let vault = tempVault()
+        #expect(throws: VaultError.self) { try PackInstaller.copy(menus: ["A", "B", "C"], from: pack, to: vault) }
+        #expect(!vault.exists("menus/A.md"))
+        #expect(!vault.exists("menus/C.md"))
+    }
+
     @Test func importNameNeverEscapesContainer() throws {
         let flat = Zip.write([ZipEntry(path: "menus/A.md", data: Data("---\nrecord: check\n---\n".utf8))])
         for suggested in ["...zip", "..zip", ".zip", ".x.zip"] {
