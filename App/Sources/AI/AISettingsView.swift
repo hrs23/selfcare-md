@@ -13,12 +13,8 @@ struct AISettingsView: View {
         Form {
             Section {
                 Picker("Provider", selection: Binding(get: { ai.settings.preset }, set: { preset in
-                    ai.settings.preset = preset
-                    ai.settings.model = nil
+                    ai.setPreset(preset)
                     key = ai.apiKey
-                    ai.testResult = nil
-                    ai.models = app.settings.prefs.modelCache[ai.cacheKey] ?? []
-                    Task { await ai.refreshModels() }
                 })) {
                     ForEach(AIPreset.allCases) { Text($0.label).tag($0) }
                 }
