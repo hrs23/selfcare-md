@@ -188,7 +188,7 @@ struct MenuEditorView: View {
                     replaceTop(with: .menu(draft.name))
                 } else {
                     if original?.name != draft.name {
-                        replaceMenuRoutes(from: original!.name, to: draft.name)
+                        app.renameRoutes(old: original!.name, new: draft.name)
                     }
                     dismiss()
                 }
@@ -199,19 +199,13 @@ struct MenuEditorView: View {
     }
 
     func replaceTop(with route: Route) {
-        func fix(_ path: inout [Route]) -> Bool {
-            guard let last = path.last, case .newMenu = last else { return false }
-            path[path.count - 1] = route
-            return true
+        for keyPath in AppModel.paths {
+            if case .newMenu? = app[keyPath: keyPath].last {
+                app[keyPath: keyPath][app[keyPath: keyPath].count - 1] = route
+                return
+            }
         }
-        if fix(&app.dayPath) || fix(&app.libraryPath) || fix(&app.aiPath) || fix(&app.settingsPath) { return }
         dismiss()
-    }
-
-    func replaceMenuRoutes(from old: String, to new: String) {
-        for keyPath in [\AppModel.dayPath, \AppModel.libraryPath, \AppModel.aiPath, \AppModel.settingsPath] {
-            app[keyPath: keyPath] = app[keyPath: keyPath].map { $0 == .menu(old) ? .menu(new) : $0 }
-        }
     }
 }
 

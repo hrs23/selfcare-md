@@ -89,12 +89,34 @@ final class AppModel {
         return m.record
     }
 
+    static let paths: [ReferenceWritableKeyPath<AppModel, [Route]>] = [\.dayPath, \.libraryPath, \.aiPath, \.settingsPath]
+
+    var path: [Route] {
+        get {
+            switch tab {
+            case .day: dayPath
+            case .library: libraryPath
+            case .ai: aiPath
+            case .settings: settingsPath
+            }
+        }
+        set {
+            switch tab {
+            case .day: dayPath = newValue
+            case .library: libraryPath = newValue
+            case .ai: aiPath = newValue
+            case .settings: settingsPath = newValue
+            }
+        }
+    }
+
     func show(_ route: Route) {
-        switch tab {
-        case .day: dayPath.append(route)
-        case .library: libraryPath.append(route)
-        case .ai: aiPath.append(route)
-        case .settings: settingsPath.append(route)
+        path.append(route)
+    }
+
+    func renameRoutes(old: String, new: String) {
+        for keyPath in Self.paths {
+            self[keyPath: keyPath] = self[keyPath: keyPath].map { $0 == .menu(old) ? .menu(new) : $0 }
         }
     }
 

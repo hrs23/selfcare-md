@@ -49,7 +49,7 @@ struct MenuDetailView: View {
             Button("Delete", role: .destructive) {
                 do {
                     try app.deleteMenu(name)
-                    pop()
+                    _ = app.path.popLast()
                 } catch {
                     app.alert = error.localizedDescription
                 }
@@ -60,7 +60,7 @@ struct MenuDetailView: View {
             Button("Rename") {
                 do {
                     try app.renameMenu(name, to: newName)
-                    replaceRoute(with: newName)
+                    app.renameRoutes(old: name, new: newName)
                 } catch {
                     app.alert = error.localizedDescription
                 }
@@ -176,25 +176,6 @@ struct MenuDetailView: View {
             }
         }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
-    }
-
-    func pop() {
-        switch app.tab {
-        case .day: _ = app.dayPath.popLast()
-        case .library: _ = app.libraryPath.popLast()
-        case .ai: _ = app.aiPath.popLast()
-        case .settings: _ = app.settingsPath.popLast()
-        }
-    }
-
-    func replaceRoute(with newName: String) {
-        func fix(_ path: inout [Route]) {
-            if let i = path.lastIndex(of: .menu(name)) { path[i] = .menu(newName) }
-        }
-        fix(&app.dayPath)
-        fix(&app.libraryPath)
-        fix(&app.aiPath)
-        fix(&app.settingsPath)
     }
 }
 
