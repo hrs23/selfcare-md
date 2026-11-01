@@ -133,22 +133,12 @@ struct DirectInput: View {
 
     var display: String {
         guard let q = quantity else { return "" }
-        switch q {
-        case let .bloodPressure(a, b): return String(part == 0 ? a : b)
-        case let .duration(s): return DurationText.format(s)
-        default:
-            let unit = q.unitText
-            let t = q.text
-            return unit.isEmpty ? t : String(t.dropLast(unit.count))
-        }
+        if case let .bloodPressure(a, b) = q { return String(part == 0 ? a : b) }
+        return String(q.text.dropLast(q.unitText.count))
     }
 
     var unit: String {
-        switch field {
-        case .reps, .duration: ""
-        case .bloodPressure: "mmHg"
-        default: (quantity ?? .zero(field, units: units)).unitText
-        }
+        (quantity ?? .zero(field, units: units)).unitText
     }
 
     var body: some View {
