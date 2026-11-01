@@ -8,6 +8,7 @@ final class DayModel {
     unowned let app: AppModel
     private(set) var doc: DailyDocument?
     private(set) var unreadable = false
+    private(set) var templateError: String?
     private(set) var previous: [Int: Value] = [:]
     private(set) var history = TextHistory()
     private(set) var celebration = 0
@@ -31,7 +32,10 @@ final class DayModel {
     }
 
     func load() {
-        if isToday { app.ensureTodayCopied() }
+        templateError = nil
+        if isToday {
+            do { try app.ensureTodayCopied() } catch { templateError = error.localizedDescription }
+        }
         let result = app.loadDaily(date)
         doc = result.doc
         unreadable = result.unreadable
@@ -79,7 +83,17 @@ final class DayModel {
             load()
             return false
         }
-        var working = doc ?? app.newDaily(date)
+        var working: DailyDocument
+        if let doc {
+            working = doc
+        } else {
+            do {
+                working = try app.newDaily(date)
+            } catch {
+                app.alert = error.localizedDescription
+                return false
+            }
+        }
         guard working.fileProblem == nil else { return false }
         let wasComplete = isComplete(working)
         change(&working)
@@ -225,7 +239,12 @@ final class DayModel {
             working = DailyDocument(text: before)
         } else {
             guard !memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-            working = app.newDaily(date)
+            do {
+                working = try app.newDaily(date)
+            } catch {
+                app.alert = error.localizedDescription
+                return
+            }
         }
         guard working.fileProblem == nil, working.memo != memo.trimmingCharacters(in: .newlines) else { return }
         working.setMemo(memo)
