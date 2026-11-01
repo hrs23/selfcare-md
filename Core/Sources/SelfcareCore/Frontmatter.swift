@@ -124,33 +124,26 @@ public struct Frontmatter: Sendable, Hashable {
     }
 
     static func stripComment(_ s: String) -> String {
+        let chars = Array(s)
         let flow = s.trimmingCharacters(in: .whitespaces).hasPrefix("[")
-        var cut: Int?
-        scan(s, opensQuote: { last in last == nil || flow && (last == "[" || last == ",") }) { offset, c, previous in
-            guard c == "#", previous?.isWhitespace ?? true else { return true }
-            cut = offset
-            return false
-        }
-        return cut.map { String(s.prefix($0)) } ?? s
+        let cut = unquoted(chars, quoteAfter: flow ? ["[", ","] : []).first { chars[$0] == "#" && ($0 == 0 || chars[$0 - 1].isWhitespace) }
+        return cut.map { String(chars[..<$0]) } ?? s
     }
 
     static func splitFlow(_ s: String) -> [String] {
         let chars = Array(s)
         var items: [String] = []
         var start = 0
-        scan(s, opensQuote: { last in last == nil || last == "," }) { offset, c, _ in
-            if c == "," {
-                items.append(String(chars[start..<offset]))
-                start = offset + 1
-            }
-            return true
+        for i in unquoted(chars, quoteAfter: [","]) where chars[i] == "," {
+            items.append(String(chars[start..<i]))
+            start = i + 1
         }
         items.append(String(chars[start...]))
         return items.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
     }
 
-    private static func scan(_ s: String, opensQuote: (Character?) -> Bool, unquoted: (Int, Character, Character?) -> Bool) {
-        let chars = Array(s)
+    private static func unquoted(_ chars: [Character], quoteAfter: Set<Character>) -> [Int] {
+        var result: [Int] = []
         var quote: Character?
         var last: Character?
         var i = 0
@@ -166,14 +159,15 @@ public struct Frontmatter: Sendable, Hashable {
                         quote = nil
                     }
                 }
-            } else if (c == "\"" || c == "'") && opensQuote(last) {
+            } else if (c == "\"" || c == "'") && (last.map(quoteAfter.contains) ?? true) {
                 quote = c
-            } else if !unquoted(i, c, i > 0 ? chars[i - 1] : nil) {
-                return
+            } else {
+                result.append(i)
             }
             if !c.isWhitespace { last = c }
             i += 1
         }
+        return result
     }
 
     static func unquote(_ s: String) -> String {
