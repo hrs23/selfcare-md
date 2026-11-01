@@ -94,6 +94,43 @@ struct HealthPlacementTests {
         #expect(!placement.place(run, into: &doc))
     }
 
+    func walk(_ date: String) -> HealthRecord {
+        HealthRecord(type: "HKWorkoutActivityTypeWalking", uuid: UUID().uuidString, date: date, quantities: [.duration(600)])
+    }
+
+    @Test func applyWritesAndReportsFailures() throws {
+        let vault = tempVault()
+        let placement = HealthPlacement(menus: [], catalog: catalog, recentMenu: { _ in nil })
+        try vault.write("daily/2026-09-02.md", "# 2026-09-02\n\n## Selfcare\n\n## Memo\n")
+        try vault.writeData("daily/2026-09-03.md", Data([0xff, 0xfe]))
+        try vault.write("daily/2026-09-04.md", "# broken\n")
+        let records = ["2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05"].map(walk)
+        let result = placement.apply(records, vault: vault) { date in
+            if date == "2026-09-05" { throw VaultError.notUTF8(Vault.templatePath) }
+            return DailyDocument.new(date: date)
+        }
+        #expect(result.written == ["2026-09-01", "2026-09-02"])
+        #expect(Set(result.failed.keys) == ["2026-09-03", "2026-09-04", "2026-09-05"])
+        #expect(result.failed["2026-09-04"]?.contains("No ## Selfcare") == true)
+        #expect(try vault.read("daily/2026-09-01.md").contains("[[Walking]]"))
+        #expect(try vault.read("daily/2026-09-02.md").contains("[[Walking]]"))
+        #expect(try vault.readData("daily/2026-09-03.md") == Data([0xff, 0xfe]))
+        #expect(try vault.read("daily/2026-09-04.md") == "# broken\n")
+        #expect(!vault.exists("daily/2026-09-05.md"))
+    }
+
+    @Test func applyReportsWriteErrors() throws {
+        let vault = tempVault()
+        let placement = HealthPlacement(menus: [], catalog: catalog, recentMenu: { _ in nil })
+        try vault.write("daily/2026-09-02.md", "# 2026-09-02\n\n## Selfcare\n\n## Memo\n")
+        let daily = try vault.url("daily").path
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: daily)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: daily) }
+        let result = placement.apply([walk("2026-09-01"), walk("2026-09-02")], vault: vault) { DailyDocument.new(date: $0) }
+        #expect(result.written.isEmpty)
+        #expect(Set(result.failed.keys) == ["2026-09-01", "2026-09-02"])
+    }
+
     @Test func tcx() {
         let start = Date(timeIntervalSince1970: 1_790_000_000)
         let input = TCXInput(sport: "Running", start: start, end: start.addingTimeInterval(600), laps: [], calories: 100, heartRate: [TCXSample(start: start.addingTimeInterval(5), end: start.addingTimeInterval(5), value: 140)], distance: [TCXSample(start: start, end: start.addingTimeInterval(60), value: 200)], cadence: [], locations: [TCXLocation(time: start.addingTimeInterval(5), latitude: 35.1, longitude: 139.2, altitude: 10)])

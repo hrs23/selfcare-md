@@ -35,6 +35,11 @@ public struct CatalogEntry: Sendable, Hashable {
     }
 }
 
+public struct HealthApplyResult: Sendable, Hashable {
+    public var written: [String] = []
+    public var failed: [String: String] = [:]
+}
+
 public struct HealthPlacement {
     public var menus: [MenuFile]
     public var catalog: (String) -> CatalogEntry?
@@ -149,6 +154,33 @@ public struct HealthPlacement {
             }
         }
         return true
+    }
+
+    public func apply(_ records: [HealthRecord], vault: Vault, newDaily: (String) throws -> DailyDocument) -> HealthApplyResult {
+        var result = HealthApplyResult()
+        for (date, group) in Dictionary(grouping: records, by: \.date).sorted(by: { $0.key < $1.key }) {
+            let path = Vault.dailyPath(date)
+            do {
+                var doc = try vault.readIfExists(path).map { DailyDocument(text: $0) } ?? newDaily(date)
+                if let problem = doc.fileProblem {
+                    result.failed[date] = "\(path): \(problem)"
+                    continue
+                }
+                let before = doc.text
+                for r in group.sorted(by: { ($0.uuid ?? "") < ($1.uuid ?? "") }) {
+                    place(r, into: &doc)
+                }
+                if doc.text != before {
+                    try vault.write(path, doc.text)
+                    result.written.append(date)
+                }
+            } catch let error as VaultError {
+                result.failed[date] = error.localizedDescription
+            } catch {
+                result.failed[date] = "\(path): \(error.localizedDescription)"
+            }
+        }
+        return result
     }
 
     func candidate(_ type: String, in doc: DailyDocument, setsOnly: Bool = false) -> Target? {
