@@ -57,6 +57,8 @@ func tempVault() -> Vault {
     return Vault(root: url)
 }
 
+let tempVolumeIsCaseInsensitive = (try? FileManager.default.temporaryDirectory.resourceValues(forKeys: [.volumeSupportsCaseSensitiveNamesKey]).volumeSupportsCaseSensitiveNames) == false
+
 struct SyncTests {
     @Test func threeWay() async throws {
         let vault = tempVault()
@@ -131,6 +133,41 @@ struct SyncTests {
         try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: b)
         #expect(try vault.read("menus/A.md") == "a changed locally\n")
         #expect(try vault.read("menus/B.md") == "b changed locally\n")
+    }
+
+    @Test(.enabled(if: tempVolumeIsCaseInsensitive))
+    func skipsCaseOnlyCollisionOnFirstSync() async throws {
+        let vault = tempVault()
+        let remote = MemoryProvider()
+        try vault.write("menus/a.md", "local")
+        remote.files["menus/A.md"] = Data("remote\n".utf8)
+        let engine = SyncEngine(vault: vault, provider: remote, state: SyncState(), save: { _ in })
+        try await engine.sync()
+        #expect(try vault.read("menus/a.md") == "local\n")
+        #expect(vault.list("menus") == ["menus/a.md"])
+        #expect(remote.files == ["menus/A.md": Data("remote\n".utf8)])
+        #expect(engine.state.lastError == "Names differ only by case: menus/A.md, menus/a.md")
+        #expect(engine.state.base.isEmpty && engine.state.conflicts.isEmpty)
+    }
+
+    @Test(.enabled(if: tempVolumeIsCaseInsensitive))
+    func caseOnlyRenameNeverDeletes() async throws {
+        let remote = MemoryProvider()
+        let first = tempVault()
+        let second = tempVault()
+        try first.write("menus/a.md", "a")
+        let one = SyncEngine(vault: first, provider: remote, state: SyncState(), save: { _ in })
+        let two = SyncEngine(vault: second, provider: remote, state: SyncState(), save: { _ in })
+        try await one.sync()
+        try await two.sync()
+        #expect(rename(try first.url("menus/a.md").path, try first.url("menus/A.md").path) == 0)
+        try await one.sync()
+        try await two.sync()
+        try await one.sync()
+        #expect(try first.read("menus/A.md") == "a\n")
+        #expect(try second.read("menus/a.md") == "a\n")
+        #expect(!remote.files.isEmpty)
+        #expect(one.state.lastError == "Names differ only by case: menus/A.md, menus/a.md")
     }
 
     @Test func rejectsOverlappingRuns() async throws {
