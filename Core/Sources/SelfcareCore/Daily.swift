@@ -322,7 +322,7 @@ public extension DailyDocument {
         String(line.prefix(while: { $0 == " " || $0 == "\t" }))
     }
 
-    private mutating func replace(_ index: Int, _ line: String) {
+    internal mutating func replace(_ index: Int, _ line: String) {
         lines[index] = line
         analyze()
     }
