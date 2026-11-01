@@ -6,6 +6,11 @@ extension AppModel {
         if let m = menu(entry.name), let type = m.appleHealth { return type }
         return packs.catalog.values.first { $0.name == entry.name }?.type
     }
+
+    func workoutUUID(for entry: Entry, marker: HealthMarker?) -> String? {
+        guard let uuid = marker?.uuid, healthType(for: entry)?.hasPrefix("HKWorkoutActivityType") == true else { return nil }
+        return uuid
+    }
 }
 
 struct StatusIcon: View {
@@ -52,8 +57,7 @@ struct EntryRow: View {
     @Environment(AppModel.self) private var app
     let model: DayModel
     let entry: Entry
-    let onMissing: () -> Void
-    let onCreateApple: ((type: String, name: String)) -> Void
+    let onCreate: () -> Void
     let onReassign: () -> Void
 
     var menu: MenuFile? { app.menu(entry.name) }
@@ -84,7 +88,7 @@ struct EntryRow: View {
                 if entry.checkbox != true, !isAvoid, let prev = model.previous[entry.line], entry.valueText.isEmpty {
                     Text(prev.text).font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
                 }
-                if imported, let type = app.healthType(for: entry), type.hasPrefix("HKWorkoutActivityType"), let uuid = entry.marker?.uuid {
+                if let uuid = app.workoutUUID(for: entry, marker: entry.marker) {
                     WorkoutExtra(uuid: uuid)
                 }
             }
@@ -105,15 +109,15 @@ struct EntryRow: View {
 
     func rowTap() {
         if imported {
-            if let type = app.healthType(for: entry), type.hasPrefix("HKWorkoutActivityType"), let uuid = entry.marker?.uuid {
+            if let uuid = app.workoutUUID(for: entry, marker: entry.marker) {
                 app.show(.workout(uuid))
-            } else if missing, let type = app.healthType(for: entry) {
-                onCreateApple((type, entry.name))
+            } else if missing, app.healthType(for: entry) != nil {
+                onCreate()
             }
             return
         }
         if missing {
-            onMissing()
+            onCreate()
             return
         }
         if menu?.hasProblem == true {
@@ -136,17 +140,13 @@ struct EntryRow: View {
             Button { model.beginEditing(entry.line) } label: { Label("Edit value", systemImage: "slider.horizontal.3") }
         }
         if imported {
-            if let type = app.healthType(for: entry), type.hasPrefix("HKWorkoutActivityType"), let uuid = entry.marker?.uuid {
+            if let uuid = app.workoutUUID(for: entry, marker: entry.marker) {
                 Button { app.show(.workout(uuid)) } label: { Label("Workout details", systemImage: "figure.run") }
             }
             Button(action: onReassign) { Label("Change Menu", systemImage: "arrow.triangle.swap") }
         }
         if missing {
-            if imported, let type = app.healthType(for: entry) {
-                Button { onCreateApple((type, entry.name)) } label: { Label("Create Menu", systemImage: "plus") }
-            } else {
-                Button(action: onMissing) { Label("Create Menu", systemImage: "plus") }
-            }
+            Button(action: onCreate) { Label("Create Menu", systemImage: "plus") }
         } else {
             Button { app.show(.menu(entry.name)) } label: { Label("Open Menu", systemImage: "doc.text") }
         }
@@ -160,8 +160,7 @@ struct SetsHeaderRow: View {
     @Environment(AppModel.self) private var app
     let model: DayModel
     let entry: Entry
-    let onMissing: () -> Void
-    let onCreateApple: ((type: String, name: String)) -> Void
+    let onCreate: () -> Void
     let onReassign: () -> Void
 
     var menu: MenuFile? { app.menu(entry.name) }
@@ -202,7 +201,7 @@ struct SetsHeaderRow: View {
         .contentShape(Rectangle())
         .onTapGesture {
             if missing {
-                if imported, let type = app.healthType(for: entry) { onCreateApple((type, entry.name)) } else { onMissing() }
+                onCreate()
             } else {
                 app.show(.menu(entry.name))
             }
@@ -212,11 +211,7 @@ struct SetsHeaderRow: View {
                 Button { model.addSet(entry) } label: { Label("Add set", systemImage: "plus") }
                 Button { app.show(.menu(entry.name)) } label: { Label("Open Menu", systemImage: "doc.text") }
             } else if missing {
-                if imported, let type = app.healthType(for: entry) {
-                    Button { onCreateApple((type, entry.name)) } label: { Label("Create Menu", systemImage: "plus") }
-                } else {
-                    Button(action: onMissing) { Label("Create Menu", systemImage: "plus") }
-                }
+                Button(action: onCreate) { Label("Create Menu", systemImage: "plus") }
             }
             if imported {
                 Button(action: onReassign) { Label("Change Menu", systemImage: "arrow.triangle.swap") }
@@ -256,7 +251,7 @@ struct SetRow: View {
         .contentShape(Rectangle())
         .onTapGesture {
             guard !imported, app.record(entry.name) != nil else {
-                if imported, let uuid = item.marker?.uuid, app.healthType(for: entry)?.hasPrefix("HKWorkoutActivityType") == true {
+                if let uuid = app.workoutUUID(for: entry, marker: item.marker) {
                     app.show(.workout(uuid))
                 }
                 return
