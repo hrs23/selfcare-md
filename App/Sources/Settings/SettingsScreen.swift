@@ -38,7 +38,7 @@ struct SettingsScreen: View {
                 }
                 Section {
                     NavigationLink(value: Route.files("")) { Label("Files", systemImage: "folder") }
-                    NavigationLink(value: Route.information) { Label("About", systemImage: "info.circle") }
+                    NavigationLink(value: Route.about) { Label("About", systemImage: "info.circle") }
                 }
             }
             .themed()
@@ -213,7 +213,7 @@ struct FileViewer: View {
     }
 }
 
-struct InformationView: View {
+struct AboutView: View {
     @Environment(AppModel.self) private var app
 
     var body: some View {

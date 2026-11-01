@@ -70,7 +70,7 @@ struct RouteView: View {
         case .units: UnitsView()
         case let .files(path): FilesView(path: path)
         case let .fileView(path): FileViewer(path: path)
-        case .information: InformationView()
+        case .about: AboutView()
         }
     }
 }

@@ -24,7 +24,7 @@ enum Route: Hashable {
     case units
     case files(String)
     case fileView(String)
-    case information
+    case about
 }
 
 struct PendingChat: Equatable {
