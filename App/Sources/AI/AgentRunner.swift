@@ -155,7 +155,7 @@ final class AgentRunner {
                         }
                     }
                 } catch {
-                    result = "Error: " + ((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+                    result = "Error: " + error.localizedDescription
                 }
                 messages.append(ChatMessage(role: .tool, text: result, toolCallId: call.id, toolName: call.name))
                 onChange(messages)

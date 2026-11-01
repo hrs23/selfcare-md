@@ -115,7 +115,7 @@ public final class SyncEngine: @unchecked Sendable {
             state.lastError = nil
             save(state)
         } catch {
-            state.lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            state.lastError = error.localizedDescription
             save(state)
             throw error
         }

@@ -92,7 +92,7 @@ final class ChatSession {
                 try await runner.run()
             } catch is CancellationError {
             } catch {
-                self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                self.error = error.localizedDescription
             }
             self.answer(false)
             self.conversation.messages = runner.messages
