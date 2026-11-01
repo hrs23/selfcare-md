@@ -209,7 +209,7 @@ struct MenuSummary: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                Text(menu.record.rawValue)
+                Text(menu.record.label)
                 if !menu.fields.isEmpty {
                     Text("·")
                     Text(menu.fields.map(\.label).joined(separator: ", "))

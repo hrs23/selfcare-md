@@ -16,9 +16,6 @@ struct SettingsScreen: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Sync")
                                     if app.sync.failing {
-                                        if let last = app.sync.state.lastSuccess {
-                                            Text(last.formatted(date: .abbreviated, time: .shortened)).font(.caption).foregroundStyle(.secondary)
-                                        }
                                         Text(app.sync.state.lastError ?? "").font(.caption).foregroundStyle(.orange)
                                     }
                                 }
@@ -33,7 +30,7 @@ struct SettingsScreen: View {
                         HStack {
                             Label("AI", systemImage: "sparkles")
                             Spacer()
-                            Text(app.ai.configured ? app.ai.settings.preset.label : "Not set").foregroundStyle(.secondary)
+                            Text(app.ai.configured ? app.ai.settings.preset.label : "Off").foregroundStyle(.secondary)
                         }
                     }
                     NavigationLink(value: Route.health) { Label("Apple Health", systemImage: "heart") }
@@ -41,7 +38,7 @@ struct SettingsScreen: View {
                 }
                 Section {
                     NavigationLink(value: Route.files("")) { Label("Files", systemImage: "folder") }
-                    NavigationLink(value: Route.information) { Label("Information", systemImage: "info.circle") }
+                    NavigationLink(value: Route.information) { Label("About", systemImage: "info.circle") }
                 }
             }
             .themed()
@@ -53,7 +50,11 @@ struct SettingsScreen: View {
     var syncSummary: String {
         guard let config = app.sync.config else { return "Off" }
         let conflicts = app.sync.conflicts.count
-        return conflicts > 0 ? "\(config.kindLabel) · \(conflicts)" : config.kindLabel
+        switch conflicts {
+        case 0: return config.kindLabel
+        case 1: return "\(config.kindLabel) · 1 conflict"
+        default: return "\(config.kindLabel) · \(conflicts) conflicts"
+        }
     }
 }
 
@@ -83,14 +84,14 @@ struct HealthSettingsView: View {
                         Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange).font(.callout)
                     }
                 }
-                Section("Types") {
+                Section {
                     NavigationLink {
                         HealthTypesView()
                     } label: {
                         LabeledContent("Types", value: "\(health.enabledTypes.count)")
                     }
                 }
-                Section("Import a period") {
+                Section("Import a date range") {
                     DatePicker("From", selection: $start, displayedComponents: .date)
                     DatePicker("To", selection: $end, in: start..., displayedComponents: .date)
                     if let progress = health.rangeProgress {
@@ -242,7 +243,7 @@ struct InformationView: View {
             }
         }
         .themed()
-        .navigationTitle("Information")
+        .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

@@ -72,8 +72,10 @@ struct PacksView: View {
 
     func subtitle(_ pack: Pack) -> String {
         let count = app.packs.menus(pack).count
-        let kind = pack.isBundled ? (pack.language ?? "") : "imported"
-        return "\(count) · \(kind)"
+        let menus = count == 1 ? "1 Menu" : "\(count) Menus"
+        guard pack.isBundled else { return "\(menus) · Imported" }
+        guard let language = pack.language else { return menus }
+        return "\(menus) · \(Locale(identifier: "en").localizedString(forLanguageCode: language) ?? language)"
     }
 
     func importURL() async {

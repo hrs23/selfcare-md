@@ -129,7 +129,7 @@ struct MenuListView: View {
                         app.ai.runQuick(.libraryCreate, target: "library", date: app.today(), input: term)
                         search = ""
                     } label: {
-                        Label("Create with AI", systemImage: "wand.and.sparkles")
+                        Label("Create Menu with AI", systemImage: "wand.and.sparkles")
                     }
                     .disabled(app.ai.quickRunning)
                 }

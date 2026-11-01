@@ -62,7 +62,7 @@ struct AISettingsView: View {
                     EmptyView()
                 }
             }
-            Section("Model") {
+            Section {
                 Picker("Model", selection: Binding(get: { ai.settings.model ?? "" }, set: { ai.settings.model = $0.isEmpty ? nil : $0 })) {
                     if ai.settings.preset != .custom {
                         Text("Default (\(ai.resolvedModel))").tag("")
@@ -73,9 +73,7 @@ struct AISettingsView: View {
                     }
                 }
                 .pickerStyle(.navigationLink)
-            }
-            if ai.settings.preset.supportsImageGeneration {
-                Section {
+                if ai.settings.preset.supportsImageGeneration {
                     Toggle("Image generation", isOn: $settings.prefs.ai.imageGeneration)
                 }
             }

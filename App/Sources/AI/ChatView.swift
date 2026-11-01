@@ -283,8 +283,8 @@ struct MessageView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 4) {
                         Image(systemName: message.text.hasPrefix("Error") ? "xmark.circle" : "checkmark.circle")
-                        Text(message.toolName ?? "tool")
-                        Text(message.omitted ? "omitted" : (message.text.components(separatedBy: "\n").first ?? ""))
+                        Text(message.toolName ?? "Tool")
+                        Text(message.omitted ? "Omitted" : (message.text.components(separatedBy: "\n").first ?? ""))
                             .lineLimit(1)
                     }
                     if expanded && !message.omitted {
