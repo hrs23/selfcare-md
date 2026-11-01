@@ -66,6 +66,18 @@ struct SyncTests {
         #expect(engine.state.conflicts.isEmpty)
     }
 
+    @Test func skipsUnsafeRemotePaths() async throws {
+        let vault = tempVault()
+        let remote = MemoryProvider()
+        remote.files["~x.md"] = Data("x\n".utf8)
+        remote.files["menus/A.md"] = Data("a\n".utf8)
+        let engine = SyncEngine(vault: vault, provider: remote, state: SyncState(), save: { _ in })
+        try await engine.sync()
+        #expect(try vault.read("menus/A.md") == "a\n")
+        #expect(engine.state.lastError?.contains("~x.md") == true)
+        #expect(engine.state.base["~x.md"] == nil)
+    }
+
     @Test func qr() {
         let json = #"{"type":"webdav","url":"https://dav.example.com/files/","username":"u","password":"p"}"#
         #expect(SyncConfig.fromQR(json) == .webdav(WebDAVConfig(url: "https://dav.example.com/files/", username: "u", password: "p")))

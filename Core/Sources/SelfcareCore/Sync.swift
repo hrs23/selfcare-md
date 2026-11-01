@@ -65,6 +65,7 @@ public final class SyncEngine: @unchecked Sendable {
     public let provider: SyncProvider
     public private(set) var state: SyncState
     private let save: @Sendable (SyncState) -> Void
+    private var skipped: [String] = []
 
     public init(vault: Vault, provider: SyncProvider, state: SyncState, save: @escaping @Sendable (SyncState) -> Void) {
         self.vault = vault
@@ -112,7 +113,7 @@ public final class SyncEngine: @unchecked Sendable {
         do {
             try await run()
             state.lastSuccess = Date()
-            state.lastError = nil
+            state.lastError = skipped.isEmpty ? nil : skipped.joined(separator: "\n")
             save(state)
         } catch {
             state.lastError = error.localizedDescription
@@ -122,6 +123,7 @@ public final class SyncEngine: @unchecked Sendable {
     }
 
     private func run() async throws {
+        skipped = []
         let remoteItems = try await provider.list().filter { Self.syncable($0.path) }
         var remote: [String: String] = [:]
         for item in remoteItems { remote[item.path] = item.version }
@@ -150,9 +152,7 @@ public final class SyncEngine: @unchecked Sendable {
                 if let l, r == nil {
                     if let v = try await upload(path) { state.base[path] = SyncBase(localHash: l, remoteVersion: v) } else { needsVersion.append(path); state.base[path] = SyncBase(localHash: l, remoteVersion: "") }
                 } else if l == nil, let r {
-                    let data = try await provider.read(path)
-                    try vault.writeData(path, data)
-                    state.base[path] = SyncBase(localHash: SyncHash.of(data), remoteVersion: r)
+                    try await download(path, version: r)
                 } else if let l, let r {
                     let data = try await provider.read(path)
                     if SyncHash.of(data) == l {
@@ -178,9 +178,7 @@ public final class SyncEngine: @unchecked Sendable {
                 }
             case (false, true):
                 if let r {
-                    let data = try await provider.read(path)
-                    try vault.writeData(path, data)
-                    state.base[path] = SyncBase(localHash: SyncHash.of(data), remoteVersion: r)
+                    try await download(path, version: r)
                 } else {
                     if l != nil { try? vault.delete(path) }
                     state.base[path] = nil
@@ -210,6 +208,17 @@ public final class SyncEngine: @unchecked Sendable {
             save(state)
         }
         state.hashes = state.hashes.filter { vault.exists($0.key) }
+    }
+
+    private func download(_ path: String, version: String) async throws {
+        let data = try await provider.read(path)
+        do {
+            try vault.writeData(path, data)
+        } catch let error as VaultError {
+            skipped.append(error.localizedDescription)
+            return
+        }
+        state.base[path] = SyncBase(localHash: SyncHash.of(data), remoteVersion: version)
     }
 
     private func upload(_ path: String) async throws -> String? {
