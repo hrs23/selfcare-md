@@ -25,22 +25,21 @@ struct DayScreen: View {
         }
         .onAppear {
             if store == nil { store = DayStore(app: app) }
+            takeRequestedDay()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .dayChanged)) { _ in
-            store?.date = app.today()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .openDay)) { note in
-            if let date = note.object as? String {
-                app.dayPath = []
-                store?.date = date
-            }
-        }
+        .onChange(of: app.requestedDay) { _, _ in takeRequestedDay() }
         .onChange(of: app.tab) { _, tab in
             if tab != .day { store?.clearAllHistory() }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { store?.clearAllHistory() }
         }
+    }
+
+    func takeRequestedDay() {
+        guard let date = app.requestedDay, let store else { return }
+        app.requestedDay = nil
+        store.date = date
     }
 }
 

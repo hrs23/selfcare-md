@@ -124,8 +124,7 @@ struct MenuDetailView: View {
                 Section("History") {
                     ForEach(history.prefix(200)) { item in
                         Button {
-                            app.tab = .day
-                            NotificationCenter.default.post(name: .openDay, object: item.date)
+                            app.openDay(item.date)
                         } label: {
                             HistoryRow(item: item)
                         }
@@ -182,10 +181,6 @@ struct MenuDetailView: View {
         }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
-}
-
-extension Notification.Name {
-    static let openDay = Notification.Name("selfcare.openDay")
 }
 
 struct MenuSummary: View {
