@@ -170,7 +170,10 @@ struct MarkdownEditorView: View {
 
     @discardableResult
     func save() -> Bool {
-        guard readError == nil, templateError == nil else { return false }
+        if let error = readError ?? templateError {
+            saveError = error
+            return false
+        }
         do {
             try app.vault.write(path, text)
             let saved = diskText() ?? text
