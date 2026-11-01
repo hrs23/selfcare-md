@@ -151,8 +151,7 @@ struct MenuEditorView: View {
         guard let data = try? await item.loadTransferable(type: Data.self), let image = UIImage(data: data) else { return }
         let resized = image.preparingThumbnail(of: fit(image.size, 1200)) ?? image
         guard let jpeg = resized.jpegData(compressionQuality: 0.85) else { return }
-        let base = draft.name.isEmpty ? "image" : draft.name.replacingOccurrences(of: " ", with: "-")
-        let path = "media/\(base)-\(UUID().uuidString.prefix(6)).jpg"
+        let path = "media/\(VaultTools.slug(draft.name))-\(UUID().uuidString.prefix(6)).jpg"
         do {
             try app.vault.writeData(path, jpeg)
             draft.thumbnail = "../" + path

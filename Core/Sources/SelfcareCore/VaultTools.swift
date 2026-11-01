@@ -223,7 +223,7 @@ public final class VaultTools: @unchecked Sendable {
         }
     }
 
-    static func slug(_ s: String) -> String {
+    public static func slug(_ s: String) -> String {
         let allowed = s.lowercased().map { $0.isLetter || $0.isNumber ? $0 : "-" }
         let collapsed = String(allowed).split(separator: "-").prefix(6).joined(separator: "-")
         return collapsed.isEmpty ? "image" : String(collapsed.prefix(40))
