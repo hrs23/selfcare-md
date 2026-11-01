@@ -255,10 +255,30 @@ public final class ChatClient: @unchecked Sendable {
         }
     }
 
+    static func apiMessages(_ messages: [ChatMessage]) -> [[String: Any]] {
+        var result: [[String: Any]] = []
+        var pending: [String] = []
+        func flush() {
+            result += pending.map { ["role": "tool", "tool_call_id": $0, "content": "Cancelled."] }
+            pending = []
+        }
+        for message in messages {
+            if message.role == .tool {
+                pending.removeAll { $0 == message.toolCallId }
+            } else {
+                flush()
+            }
+            result.append(message.apiJSON)
+            if message.role == .assistant { pending = message.toolCalls.map(\.id) }
+        }
+        flush()
+        return result
+    }
+
     public func stream(model: String, messages: [ChatMessage], tools: [ToolSpec]) -> AsyncThrowingStream<StreamEvent, Error> {
         var body: [String: Any] = [
             "model": model,
-            "messages": messages.map(\.apiJSON),
+            "messages": Self.apiMessages(messages),
             "stream": true,
         ]
         if !tools.isEmpty { body["tools"] = tools.map(\.apiJSON) }

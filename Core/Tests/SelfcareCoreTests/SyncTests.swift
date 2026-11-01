@@ -299,6 +299,21 @@ struct PackAndToolTests {
         #expect(Glob.matches(try Glob.regex("x{a,b}"), "xa"))
     }
 
+    @Test func unansweredToolCallsGetResults() {
+        let messages = [
+            ChatMessage(role: .user, text: "hi"),
+            ChatMessage(role: .assistant, text: "", toolCalls: [ToolCall(id: "a", name: "glob", arguments: ""), ToolCall(id: "b", name: "read", arguments: "")]),
+            ChatMessage(role: .tool, text: "done", toolCallId: "a"),
+            ChatMessage(role: .user, text: "again"),
+            ChatMessage(role: .assistant, text: "", toolCalls: [ToolCall(id: "c", name: "glob", arguments: "")]),
+        ]
+        let json = ChatClient.apiMessages(messages)
+        #expect(json.map { $0["role"] as? String } == ["user", "assistant", "tool", "tool", "user", "assistant", "tool"])
+        #expect(json.map { $0["tool_call_id"] as? String } == [nil, nil, "a", "b", nil, nil, "c"])
+        #expect(json[3]["content"] as? String == "Cancelled.")
+        #expect(json[6]["content"] as? String == "Cancelled.")
+    }
+
     @Test func modelChooser() {
         let models = ["gpt-5.6-luna", "gpt-6-luna", "gpt-6-luna-pro", "gpt-6-sol", "gpt-5.5-2026-04-23"]
         #expect(ModelChooser.pick(family: "luna", from: models, fallback: "x") == "gpt-6-luna")
