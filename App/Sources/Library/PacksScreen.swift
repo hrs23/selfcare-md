@@ -190,7 +190,7 @@ struct PackDetailView: View {
                 .confirmationDialog("Delete \(pack.name)?", isPresented: $confirmDelete, titleVisibility: .visible) {
                     Button("Delete", role: .destructive) {
                         app.packs.delete(pack)
-                        _ = app.libraryPath.popLast()
+                        app.pop()
                     }
                 }
             }

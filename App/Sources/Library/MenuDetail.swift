@@ -49,7 +49,7 @@ struct MenuDetailView: View {
             Button("Delete", role: .destructive) {
                 do {
                     try app.deleteMenu(name)
-                    _ = app.path.popLast()
+                    app.pop()
                 } catch {
                     app.alert = error.localizedDescription
                 }
