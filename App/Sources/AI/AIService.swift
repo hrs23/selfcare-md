@@ -173,16 +173,14 @@ final class AIService {
             let allowsGenerated = kind == .menuImage
             allowed = { path in
                 guard path == target || allowsGenerated && path.hasPrefix("media/generated/") else { return false }
-                recorder.record(path)
-                return true
+                return recorder.record(path)
             }
         case .libraryCreate:
             allowed = { path in
                 guard path.hasPrefix("menus/"), path.hasSuffix(".md") else { return false }
                 if recorder.created(path) { return true }
                 guard !vault.exists(path) else { return false }
-                recorder.record(path)
-                return true
+                return recorder.record(path)
             }
         }
         let extra = settings.quickPrompts[kind.rawValue]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
