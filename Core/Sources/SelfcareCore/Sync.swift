@@ -248,8 +248,10 @@ public final class SyncEngine: @unchecked Sendable {
             if l == b.localHash && r == nil && l != nil { localDeletions += 1 }
             if r == b.remoteVersion && l == nil && r != nil { remoteDeletions += 1 }
         }
-        let limit = max(10, state.base.count / 2)
-        if localDeletions > limit || remoteDeletions > limit {
+        let base = state.base.count
+        let limit = max(10, base / 2)
+        let wipesBase = base > 1 && (localDeletions == base || remoteDeletions == base)
+        if localDeletions > limit || remoteDeletions > limit || wipesBase {
             throw SyncError.massDeletion(local: localDeletions, remote: remoteDeletions)
         }
     }

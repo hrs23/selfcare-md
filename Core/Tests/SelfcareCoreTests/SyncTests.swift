@@ -220,6 +220,17 @@ struct SyncTests {
         #expect(remote.files.count == 15)
     }
 
+    @Test func emptiedServerNeedsConfirmation() async throws {
+        let vault = tempVault()
+        for i in 0..<10 { try vault.write("menus/M\(i).md", "\(i)") }
+        let remote = MemoryProvider()
+        let engine = SyncEngine(vault: vault, provider: remote, state: SyncState(), save: { _ in })
+        try await engine.sync()
+        remote.files = [:]
+        await #expect(throws: SyncError.massDeletion(local: 10, remote: 0)) { try await engine.sync() }
+        #expect(vault.list("menus").count == 10)
+    }
+
     @Test func smallDeletionNeedsNoConfirmation() async throws {
         let vault = tempVault()
         for i in 0..<12 { try vault.write("menus/M\(i).md", "\(i)") }
