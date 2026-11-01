@@ -60,10 +60,10 @@ enum QuickKind: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .dayPlan: "Plan the day"
-        case .menuTidy: "Tidy up Menu"
-        case .menuImage: "Menu image"
-        case .libraryCreate: "Create Menu"
+        case .dayPlan: "Plan with AI"
+        case .menuTidy: "Tidy up with AI"
+        case .menuImage: "Create image"
+        case .libraryCreate: "Create Menu with AI"
         }
     }
 }

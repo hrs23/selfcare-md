@@ -35,7 +35,7 @@ struct LibraryScreen: View {
                             Button { selecting = true } label: { Label("Export Menus…", systemImage: "square.and.arrow.up") }
                             Button {
                                 app.openChat(attachments: [], text: "Help me organize my Menus.")
-                            } label: { Label("Organize with AI", systemImage: "bubble.left.and.text.bubble.right") }
+                            } label: { Label("Chat about Menus", systemImage: "bubble.left.and.text.bubble.right") }
                         } label: { Image(systemName: "ellipsis.circle") }
                         Button { app.show(.newMenu("")) } label: { Image(systemName: "plus") }
                     }

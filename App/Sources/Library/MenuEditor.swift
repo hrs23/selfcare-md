@@ -2,6 +2,16 @@ import PhotosUI
 import SelfcareCore
 import SwiftUI
 
+extension Record {
+    var label: String {
+        switch self {
+        case .check: "Check"
+        case .avoid: "Avoid"
+        case .sets: "Sets"
+        }
+    }
+}
+
 struct MenuEditorView: View {
     enum Mode: Hashable {
         case create(String)
@@ -36,7 +46,7 @@ struct MenuEditorView: View {
             }
             Section("Record") {
                 Picker("Record", selection: Binding(get: { draft.record }, set: { draft.record = $0; touchedRecordOrFields = true })) {
-                    ForEach(Record.allCases) { Text($0.rawValue).tag($0) }
+                    ForEach(Record.allCases) { Text($0.label).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
@@ -59,7 +69,7 @@ struct MenuEditorView: View {
                 }
             }
             Section("Tags") {
-                TextField("Tags", text: $tagsText)
+                TextField("", text: $tagsText)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
             }
@@ -136,7 +146,7 @@ struct MenuEditorView: View {
         if let m = MenuName.validate(draft.name) { return m }
         let others = app.menus.filter { $0.name != original?.name }
         if others.contains(where: { $0.name.caseInsensitiveCompare(draft.name) == .orderedSame }) {
-            return "A Menu with this name exists"
+            return "A Menu with this name already exists"
         }
         return nil
     }

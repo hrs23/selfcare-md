@@ -126,7 +126,7 @@ struct SyncConnectForm: View {
                     Button("Choose folder") { Task { await loadFolders() } }
                         .disabled(url.isEmpty)
                     if let folders {
-                        Button("This folder") { Task { await choose("") } }
+                        Button("Use this folder") { Task { await choose("") } }
                         ForEach(folders, id: \.self) { folder in
                             Button(folder) { Task { await choose(folder) } }
                         }
@@ -147,7 +147,7 @@ struct SyncConnectForm: View {
                     TextField("Bucket", text: $bucket).textInputAutocapitalization(.never).autocorrectionDisabled()
                     TextField("Prefix", text: $prefix).textInputAutocapitalization(.never).autocorrectionDisabled()
                     TextField("Access key", text: $accessKey).textInputAutocapitalization(.never).autocorrectionDisabled()
-                    SecureField("Secret", text: $secret)
+                    SecureField("Secret key", text: $secret)
                 }
             }
             Section {
@@ -215,7 +215,6 @@ struct SyncConnectForm: View {
         do {
             let p = try WebDAVProvider(config: WebDAVConfig(url: url, username: username, password: password))
             folders = try await p.folders(at: "")
-            if folders?.isEmpty == true { error = "No folders" }
         } catch {
             self.error = error.localizedDescription
         }
@@ -313,10 +312,10 @@ struct ConflictResolveView: View {
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Menu("Resolve") {
-                    Button("Keep this iPhone") { resolve(.local) }
-                    Button("Keep server") { resolve(.remote) }
+                    Button("Keep iPhone version") { resolve(.local) }
+                    Button("Keep server version") { resolve(.remote) }
                     if isText && mode == 2 {
-                        Button("Save edited") { resolve(.merged(Data(VaultText.normalized(merged).utf8))) }
+                        Button("Save edit") { resolve(.merged(Data(VaultText.normalized(merged).utf8))) }
                     }
                 }
             }

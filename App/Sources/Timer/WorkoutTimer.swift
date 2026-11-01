@@ -123,6 +123,7 @@ struct TimerBanner: View {
                 }
                 .buttonStyle(.bordered)
                 .buttonBorderShape(.circle)
+                .accessibilityLabel("Discard")
                 Button {
                     if state.paused { app.timer.resume() } else { app.timer.pause() }
                 } label: {
@@ -142,9 +143,6 @@ struct TimerBanner: View {
                 .buttonStyle(.borderedProminent)
                 .buttonBorderShape(.circle)
                 .disabled(app.timer.saving)
-            }
-            .contextMenu {
-                Button(role: .destructive) { confirmDiscard = true } label: { Label("Discard", systemImage: "trash") }
             }
             .confirmationDialog("Discard this workout?", isPresented: $confirmDiscard, titleVisibility: .visible) {
                 Button("Discard", role: .destructive) { app.timer.discard() }
