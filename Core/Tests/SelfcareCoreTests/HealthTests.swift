@@ -110,7 +110,7 @@ struct HealthPlacementTests {
             for calories in [Double.nan, .infinity] {
                 let input = TCXInput(sport: "Biking", start: start, end: start.addingTimeInterval(600), laps: [], calories: calories, heartRate: [TCXSample(start: start, end: start, value: .infinity)], distance: [], cadence: [TCXSample(start: start, end: start, value: .nan)], locations: [])
                 let xml = TCX.build(input)
-                precondition(!xml.contains("<Calories>") && !xml.contains("HeartRateBpm") && !xml.contains("<Cadence>"))
+                precondition(xml.contains("<Calories>0</Calories>") && !xml.contains("HeartRateBpm") && !xml.contains("<Cadence>"))
                 precondition(XMLParser(data: Data(xml.utf8)).parse())
             }
         }
