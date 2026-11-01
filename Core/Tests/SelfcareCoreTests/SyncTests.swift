@@ -116,6 +116,13 @@ struct PackAndToolTests {
         #expect(read == entries)
     }
 
+    @Test func rejectsOversizedZip() throws {
+        let data = Zip.write([ZipEntry(path: "a.bin", data: Data(count: 600)), ZipEntry(path: "b.bin", data: Data(count: 600))])
+        #expect(throws: ZipError.tooLarge) { try Zip.read(data, maxEntrySize: 500, maxTotalSize: 2000) }
+        #expect(throws: ZipError.tooLarge) { try Zip.read(data, maxEntrySize: 600, maxTotalSize: 1000) }
+        #expect(try Zip.read(data, maxEntrySize: 600, maxTotalSize: 1200).count == 2)
+    }
+
     @Test func rejectsUnsafeZip() {
         let data = Zip.write([ZipEntry(path: "../evil/menus/A.md", data: Data("x".utf8))])
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
