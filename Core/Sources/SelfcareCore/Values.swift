@@ -272,6 +272,11 @@ public enum ValueParser {
         return Value(result)
     }
 
+    public static func minutes(_ raw: String) -> Quantity? {
+        guard let minutes = Double(raw), minutes >= 0, let seconds = Int(exactly: (minutes * 60).rounded()) else { return nil }
+        return .duration(seconds)
+    }
+
     static func quantity(_ token: String) -> Quantity? {
         if token.isEmpty { return nil }
         if token.contains(":") { return clock(token) }

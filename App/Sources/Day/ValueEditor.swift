@@ -164,11 +164,7 @@ struct DirectInput: View {
         let q: Quantity?
         switch field {
         case .duration:
-            if !raw.contains(":"), let minutes = Double(raw) {
-                q = .duration(Int((minutes * 60).rounded()))
-            } else {
-                q = ValueParser.parse(raw)?[.duration]
-            }
+            q = ValueParser.minutes(raw) ?? ValueParser.parse(raw)?[.duration]
         case .bloodPressure:
             guard let n = Int(raw), case let .bloodPressure(a, b) = quantity ?? .zero(.bloodPressure, units: units) else { q = nil; break }
             q = part == 0 ? .bloodPressure(n, b) : .bloodPressure(a, n)
