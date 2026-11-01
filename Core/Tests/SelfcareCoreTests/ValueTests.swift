@@ -149,6 +149,12 @@ struct MenuTests {
         #expect(out == "---\ncustom: keep\nrecord: sets\nfields: [weight, reps]\n---\n\nBody\n")
     }
 
+    @Test func draftKeepsUnchangedStyle() {
+        let text = "---\nrecord: sets # strength\nfields:\n  - weight\n  - reps\ntags: ['lower body']\n---\n\nBody\n"
+        let m = MenuFile(name: "X", text: text, appleHealthTypes: types)
+        #expect(MenuDraft(menu: m).text(updating: m.file) == text)
+    }
+
     @Test func names() {
         #expect(MenuName.validate("Squat") == nil)
         #expect(MenuName.validate("") != nil)
