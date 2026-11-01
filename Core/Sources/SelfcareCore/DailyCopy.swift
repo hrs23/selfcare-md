@@ -7,9 +7,8 @@ public enum DailyCopy {
             guard let r = record(e.name) else { continue }
             let importedLine = e.marker != nil
             let keptSets = e.sets.filter { $0.marker == nil && $0.problem == nil }
-            let hadSets = !e.sets.isEmpty
             let checkbox: Bool?
-            if hadSets {
+            if !e.sets.isEmpty {
                 checkbox = nil
             } else {
                 switch r {
@@ -18,9 +17,8 @@ public enum DailyCopy {
                 case .sets: checkbox = e.checkbox == nil ? nil : false
                 }
             }
-            let value = importedLine ? "" : (r == .avoid ? "" : e.valueText)
-            let keepComment = importedLine ? nil : (e.marker == nil ? e.comment : nil)
-            var block = [DailyDocument.menuLine(checkbox: checkbox, link: e.link, value: value, comment: keepComment)]
+            let value = importedLine || r == .avoid ? "" : e.valueText
+            var block = [DailyDocument.menuLine(checkbox: checkbox, link: e.link, value: value, comment: importedLine ? nil : e.comment)]
             for s in keptSets {
                 block.append(DailyDocument.setLine(indent: DailyDocument.indent(of: s.raw), checked: false, value: s.valueText, comment: s.comment))
             }

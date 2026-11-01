@@ -82,8 +82,8 @@ public struct HealthPlacement {
                 guard s.problem == nil else { return false }
                 let v = Self.value(rec.quantities, fields: fields(for: e.name, type: rec.type))
                 if v.text == s.valueText && s.checked { return false }
-                doc.setSetCheck(s.line, true)
-                doc.setSetValue(s.line, v)
+                doc.lines[s.line] = DailyDocument.setLine(indent: DailyDocument.indent(of: s.raw), checked: true, value: v.text, comment: s.comment)
+                doc.analyze()
                 return true
             }
         }

@@ -149,10 +149,6 @@ public final class Vault: @unchecked Sendable {
         )
     }
 
-    public func modified(_ relative: String) -> Date? {
-        info(relative)?.modified
-    }
-
     public func list(_ relative: String = "", recursive: Bool = true, includeDirectories: Bool = false) -> [String] {
         guard let base = try? url(relative) else { return [] }
         var result: [String] = []

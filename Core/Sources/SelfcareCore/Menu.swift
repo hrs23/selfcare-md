@@ -167,11 +167,7 @@ public struct MenuDraft: Sendable, Hashable {
         fm.set("thumbnail", thumbnail.map { .scalar($0) })
         file.frontmatter = fm
         file.frontmatterBroken = false
-        if original == nil {
-            file.body = body.isEmpty ? "" : "\n" + body
-        } else {
-            file.body = body
-        }
+        file.body = original == nil && !body.isEmpty ? "\n" + body : body
         return file.text
     }
 }
@@ -199,7 +195,6 @@ public enum MarkdownImages {
     ]
 
     public static func references(in body: String) -> [String] {
-        var refs: [String] = []
         let ns = body as NSString
         var found: [(Int, String)] = []
         for regex in patterns {
@@ -210,9 +205,6 @@ public enum MarkdownImages {
                 found.append((m.range.location, path))
             }
         }
-        for (_, path) in found.sorted(by: { $0.0 < $1.0 }) where !path.contains("://") {
-            refs.append(path)
-        }
-        return refs
+        return found.sorted { $0.0 < $1.0 }.map(\.1).filter { !$0.contains("://") }
     }
 }
