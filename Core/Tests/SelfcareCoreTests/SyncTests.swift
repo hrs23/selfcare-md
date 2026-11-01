@@ -302,7 +302,7 @@ struct PackAndToolTests {
         #expect(try vault.readData("media/s.png") == Data([7]))
         try PackInstaller.copy(menus: ["Squat"], from: pack, to: vault, replacing: true)
         #expect(try vault.read("menus/squat.md").contains("record: sets"))
-        #expect(!vault.exists("menus/Squat.md") || vault.menuNames().count == 1)
+        #expect(vault.menuNames() == ["squat"])
         #expect(try vault.readData("media/s.png") == Data([1]))
     }
 
