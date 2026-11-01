@@ -78,11 +78,7 @@ struct SyncTests {
     }
 
     @Test func sigv4() {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.timeZone = TimeZone(identifier: "UTC")
-        f.dateFormat = "yyyyMMdd'T'HHmmss'Z'"
-        let date = f.date(from: "20130524T000000Z")!
+        let date = ISO8601DateFormatter().date(from: "2013-05-24T00:00:00Z")!
         let headers = S3Signer.sign(method: "GET", host: "examplebucket.s3.amazonaws.com", path: "/", query: "max-keys=2&prefix=J", payload: Data(), region: "us-east-1", accessKey: "AKIAIOSFODNN7EXAMPLE", secret: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", date: date)
         #expect(headers["Authorization"]?.hasSuffix("Signature=34b48302e7b5fa45bde8084f4b7868a86f0a534bc59db6670ed5711ef69dc6f7") == true)
     }
@@ -103,6 +99,16 @@ struct SyncTests {
 }
 
 struct PackAndToolTests {
+    func importPack(_ name: String, image: UInt8) throws -> Pack {
+        let data = Zip.write([
+            ZipEntry(path: "\(name)/menus/Squat.md", data: Data("---\nrecord: sets\nfields: [reps]\n---\n\n![s](../media/s.png)\n".utf8)),
+            ZipEntry(path: "\(name)/media/s.png", data: Data([image])),
+        ])
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let root = try PackInstaller.importZip(data, suggestedName: "\(name).zip", into: dir)
+        return Pack(id: name, name: name, root: root, isBundled: false, language: nil)
+    }
+
     @Test func zipRoundTrip() throws {
         let entries = [ZipEntry(path: "Pack/menus/Squat.md", data: Data(String(repeating: "squat ", count: 100).utf8)), ZipEntry(path: "Pack/media/x.png", data: Data([0, 1, 2, 3]))]
         let data = Zip.write(entries)
@@ -118,31 +124,19 @@ struct PackAndToolTests {
     }
 
     @Test func importAndCopy() throws {
-        let data = Zip.write([
-            ZipEntry(path: "My Pack/menus/Squat.md", data: Data("---\nrecord: sets\nfields: [reps]\n---\n\n![s](../media/s.png)\n".utf8)),
-            ZipEntry(path: "My Pack/media/s.png", data: Data([9, 9])),
-        ])
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let root = try PackInstaller.importZip(data, suggestedName: "x.zip", into: dir)
-        #expect(root.lastPathComponent == "My Pack")
-        let pack = Pack(id: "x", name: "My Pack", root: root, isBundled: false, language: nil)
+        let pack = try importPack("My Pack", image: 9)
+        #expect(pack.root.lastPathComponent == "My Pack")
         #expect(pack.menuNames() == ["Squat"])
         let vault = tempVault()
         try PackInstaller.copy(menus: ["Squat"], from: pack, to: vault)
         #expect(vault.exists("menus/Squat.md"))
-        #expect(try vault.readData("media/s.png") == Data([9, 9]))
+        #expect(try vault.readData("media/s.png") == Data([9]))
         let exported = try PackInstaller.export(name: "Out", menus: ["Squat"], vault: vault)
         #expect(try Zip.read(exported).map(\.path).sorted() == ["Out/media/s.png", "Out/menus/Squat.md"])
     }
 
     @Test func copyReplacesOnlyWhenAsked() throws {
-        let data = Zip.write([
-            ZipEntry(path: "P/menus/Squat.md", data: Data("---\nrecord: sets\nfields: [reps]\n---\n\n![s](../media/s.png)\n".utf8)),
-            ZipEntry(path: "P/media/s.png", data: Data([1])),
-        ])
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let root = try PackInstaller.importZip(data, suggestedName: "p.zip", into: dir)
-        let pack = Pack(id: "p", name: "P", root: root, isBundled: false, language: nil)
+        let pack = try importPack("P", image: 1)
         let vault = tempVault()
         try vault.write("menus/squat.md", "---\nrecord: check\n---\n")
         try vault.writeData("media/s.png", Data([7]))
