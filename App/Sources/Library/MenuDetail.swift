@@ -160,7 +160,11 @@ struct MenuDetailView: View {
         if let date {
             let model = DayModel(date: date, app: app)
             model.load()
-            model.add(menu: menu)
+            if let problem = model.doc?.fileProblem {
+                app.alert = "\(Vault.dailyPath(date)): \(problem)"
+                return
+            }
+            guard model.add(menu: menu) else { return }
         } else {
             do {
                 var t = try app.template() ?? DailyDocument.newTemplate()
@@ -173,6 +177,7 @@ struct MenuDetailView: View {
                 app.vaultChanged()
             } catch {
                 app.alert = error.localizedDescription
+                return
             }
         }
         UINotificationFeedbackGenerator().notificationOccurred(.success)

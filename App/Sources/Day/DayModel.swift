@@ -184,7 +184,8 @@ final class DayModel {
         mutate { $0.deleteEntry(entry.line) }
     }
 
-    func add(menu: MenuFile) {
+    @discardableResult
+    func add(menu: MenuFile) -> Bool {
         mutate { $0.addEntry(name: menu.name, record: menu.record) }
     }
 
