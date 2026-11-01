@@ -81,11 +81,15 @@ final class AIService {
     func refreshModels() async {
         guard let client = client() else { return }
         if let list = try? await client.models(), !list.isEmpty {
-            models = list.sorted()
-            app.settings.prefs.modelCache[cacheKey] = models
+            storeModels(list)
         } else {
             models = app.settings.prefs.modelCache[cacheKey] ?? []
         }
+    }
+
+    private func storeModels(_ list: [String]) {
+        models = list.sorted()
+        app.settings.prefs.modelCache[cacheKey] = models
     }
 
     func testConnection() async {
@@ -98,10 +102,7 @@ final class AIService {
         }
         do {
             let list = try await client.models()
-            if !list.isEmpty {
-                models = list.sorted()
-                app.settings.prefs.modelCache[cacheKey] = models
-            }
+            if !list.isEmpty { storeModels(list) }
             try await client.ping(model: resolvedModel)
             testResult = .success(())
         } catch {
