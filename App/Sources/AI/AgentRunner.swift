@@ -11,10 +11,16 @@ nonisolated final class WriteRecorder: @unchecked Sendable {
         self.vault = vault
     }
 
-    func record(_ path: String) {
+    func record(_ path: String) -> Bool {
         lock.withLock {
-            if originals.keys.contains(path) { return }
-            originals[path] = vault.exists(path) ? (try? vault.readData(path)) : nil
+            if originals.keys.contains(path) { return true }
+            if vault.exists(path) {
+                guard let data = try? vault.readData(path) else { return false }
+                originals[path] = .some(data)
+            } else {
+                originals[path] = .some(nil)
+            }
+            return true
         }
     }
 
