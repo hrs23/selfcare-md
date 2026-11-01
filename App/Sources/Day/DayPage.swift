@@ -36,12 +36,13 @@ struct DayPage: View {
             if app.timer.isRunning {
                 Section { TimerBanner() }
             }
+            if let error = model.templateError {
+                FileProblemRow(path: Vault.templatePath, message: error)
+            }
             if model.unreadable {
                 FileProblemRow(path: model.path, message: "The file is not UTF-8")
             } else if let problem = model.doc?.fileProblem {
                 FileProblemRow(path: model.path, message: problem)
-            } else if let error = model.templateError {
-                FileProblemRow(path: Vault.templatePath, message: error)
             } else {
                 let rows = self.rows
                 if !rows.isEmpty {

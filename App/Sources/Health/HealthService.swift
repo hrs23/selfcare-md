@@ -251,7 +251,7 @@ final class HealthService {
     @discardableResult
     func apply(_ records: [HealthRecord]) -> Bool {
         guard !records.isEmpty else { return true }
-        let result = app.placement().apply(records, vault: app.vault) { try app.newDaily($0) }
+        let result = app.placement().apply(records, vault: app.vault) { app.newDaily($0) }
         if !result.written.isEmpty { app.vaultChanged() }
         guard result.failed.isEmpty else {
             lastError = result.failed.sorted { $0.key < $1.key }.map(\.value).joined(separator: "\n")

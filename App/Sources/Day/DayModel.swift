@@ -32,10 +32,8 @@ final class DayModel {
     }
 
     func load() {
-        templateError = nil
-        if isToday {
-            do { try app.ensureTodayCopied() } catch { templateError = error.localizedDescription }
-        }
+        if isToday { app.ensureTodayCopied() }
+        templateError = isToday ? app.templateProblem() : nil
         let result = app.loadDaily(date)
         doc = result.doc
         unreadable = result.unreadable
@@ -83,17 +81,7 @@ final class DayModel {
             load()
             return false
         }
-        var working: DailyDocument
-        if let doc {
-            working = doc
-        } else {
-            do {
-                working = try app.newDaily(date)
-            } catch {
-                app.alert = error.localizedDescription
-                return false
-            }
-        }
+        var working = doc ?? app.newDaily(date)
         guard working.fileProblem == nil else { return false }
         let wasComplete = isComplete(working)
         change(&working)
@@ -239,12 +227,7 @@ final class DayModel {
             working = DailyDocument(text: before)
         } else {
             guard !memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-            do {
-                working = try app.newDaily(date)
-            } catch {
-                app.alert = error.localizedDescription
-                return
-            }
+            working = app.newDaily(date)
         }
         guard working.fileProblem == nil, working.memo != memo.trimmingCharacters(in: .newlines) else { return }
         working.setMemo(memo)
