@@ -189,23 +189,24 @@ public enum Quantity: Hashable, Sendable {
             let step = u == .kg ? 2.5 : 5
             return .weight(Self.snap(v + d * step, step), u)
         case let .reps(n):
-            return .reps(max(0, n + direction))
+            return .reps(max(0, Self.saturating(n, direction)))
         case let .distance(v, u):
             let step = u.isLarge ? 0.1 : 100
             return .distance(max(0, Self.snap(v + d * step, step)), u)
         case let .duration(s):
             if direction > 0 {
                 let step = s < 60 ? 5 : (s < 600 ? 15 : 60)
-                return .duration((s / step + 1) * step)
+                let (next, overflow) = (s / step + 1).multipliedReportingOverflow(by: step)
+                return .duration(overflow ? .max : next)
             }
             let step = s <= 60 ? 5 : (s <= 600 ? 15 : 60)
-            return .duration(max(0, ((s + step - 1) / step - 1) * step))
+            return .duration(max(0, (s / step + (s % step > 0 ? 1 : 0) - 1) * step))
         case let .heartRate(v):
             return .heartRate(max(0, v.rounded() + d))
         case let .percent(v):
             return .percent(max(0, Self.snap(v + d * 0.1, 0.1)))
         case let .bloodPressure(a, b):
-            return part == 0 ? .bloodPressure(max(0, a + direction), b) : .bloodPressure(a, max(0, b + direction))
+            return part == 0 ? .bloodPressure(max(0, Self.saturating(a, direction)), b) : .bloodPressure(a, max(0, Self.saturating(b, direction)))
         case let .volume(v, u):
             let step: Double = u == .ml ? 50 : (u == .l ? 0.1 : 1)
             return .volume(max(0, Self.snap(v + d * step, step)), u)
@@ -214,6 +215,11 @@ public enum Quantity: Hashable, Sendable {
         case let .temperature(v, u):
             return .temperature(Self.snap(v + d * 0.1, 0.1), u)
         }
+    }
+
+    private static func saturating(_ a: Int, _ b: Int) -> Int {
+        let (sum, overflow) = a.addingReportingOverflow(b)
+        return overflow ? (b > 0 ? .max : .min) : sum
     }
 
     private static func snap(_ v: Double, _ step: Double) -> Double {
@@ -288,7 +294,7 @@ public enum ValueParser {
         let numberEnd = index
         guard sawDigit else { return nil }
         let numberText = String(token[token.startIndex..<numberEnd])
-        guard numberText.last != ".", let number = Double(numberText) else { return nil }
+        guard numberText.last != ".", let number = Double(numberText), number.isFinite else { return nil }
         let unit = token[numberEnd...].trimmingCharacters(in: .whitespaces).lowercased()
         let negative = number < 0
         let isInteger = !sawDot
@@ -328,11 +334,16 @@ public enum ValueParser {
         let numbers = parts.compactMap { Int($0) }
         guard numbers.count == parts.count else { return nil }
         guard parts.last!.count == 2, numbers.last! < 60 else { return nil }
-        if numbers.count == 2 {
-            return .duration(numbers[0] * 60 + numbers[1])
-        }
+        guard let minutes = sexagesimal(numbers[0], numbers[1]) else { return nil }
+        if numbers.count == 2 { return .duration(minutes) }
         guard parts[1].count == 2, numbers[1] < 60 else { return nil }
-        return .duration(numbers[0] * 3600 + numbers[1] * 60 + numbers[2])
+        return sexagesimal(minutes, numbers[2]).map { .duration($0) }
+    }
+
+    private static func sexagesimal(_ high: Int, _ low: Int) -> Int? {
+        let (scaled, o1) = high.multipliedReportingOverflow(by: 60)
+        let (sum, o2) = scaled.addingReportingOverflow(low)
+        return o1 || o2 ? nil : sum
     }
 
     static func pressure(_ token: String) -> Quantity? {

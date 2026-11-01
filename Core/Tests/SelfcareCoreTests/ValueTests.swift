@@ -70,6 +70,21 @@ struct ValueTests {
         #expect(Quantity.distance(5.0, .km).stepped(1).text == "5.1km")
     }
 
+    @Test func hugeNumbers() async {
+        #expect(ValueParser.parse(String(repeating: "9", count: 400) + "kg") == nil)
+        await #expect(processExitsWith: .success) {
+            precondition(ValueParser.parse("9223372036854775807:00") == nil)
+            precondition(ValueParser.parse("2562047788015216:00:00") == nil)
+        }
+        await #expect(processExitsWith: .success) {
+            _ = Quantity.reps(Int.max).stepped(1)
+            _ = Quantity.duration(Int.max).stepped(1)
+            _ = Quantity.duration(Int.max).stepped(-1)
+            _ = Quantity.bloodPressure(Int.max, Int.max).stepped(1)
+            _ = Quantity.bloodPressure(Int.max, Int.max).stepped(1, part: 1)
+        }
+    }
+
     @Test func fieldOrder() {
         let v = Value([.duration(1680), .distance(5, .km), .heartRate(150)])
         #expect(v.text == "5.0km × 28:00 × 150bpm")
