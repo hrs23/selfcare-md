@@ -30,12 +30,15 @@ final class GatedProvider: SyncProvider, @unchecked Sendable {
     let release: AsyncStream<Void>
     private let enteredContinuation: AsyncStream<Void>.Continuation
     let releaseContinuation: AsyncStream<Void>.Continuation
-    private var gated = true
+    private var gated: Bool
 
-    init() {
+    init(gated: Bool = true) {
+        self.gated = gated
         (entered, enteredContinuation) = AsyncStream.makeStream()
         (release, releaseContinuation) = AsyncStream.makeStream()
     }
+
+    func arm() { gated = true }
 
     func list() async throws -> [RemoteItem] {
         if gated {

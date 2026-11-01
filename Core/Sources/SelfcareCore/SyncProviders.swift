@@ -70,6 +70,13 @@ public enum SyncConfig: Codable, Sendable, Hashable {
         }
     }
 
+    public func makeProvider() throws -> SyncProvider {
+        switch self {
+        case let .webdav(c): try WebDAVProvider(config: c)
+        case let .s3(c): try S3Provider(config: c)
+        }
+    }
+
     public static func fromQR(_ text: String) -> SyncConfig? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if let data = trimmed.data(using: .utf8), let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {

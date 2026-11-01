@@ -16,6 +16,13 @@ public protocol SyncProvider: Sendable {
     func read(_ path: String) async throws -> Data
     func write(_ path: String, _ data: Data) async throws -> String?
     func delete(_ path: String) async throws
+    func testConnection() async throws
+}
+
+extension SyncProvider {
+    public func testConnection() async throws {
+        _ = try await list()
+    }
 }
 
 public struct SyncBase: Codable, Sendable, Hashable {
