@@ -124,11 +124,9 @@ final class AppModel {
 
     func ensureTodayCopied() {
         let date = today()
-        guard !vault.exists(Vault.dailyPath(date)), let template = template(), template.fileProblem == nil else { return }
-        let blocks = DailyCopy.blocks(from: template, record: record)
-        guard !blocks.isEmpty else { return }
-        var doc = DailyDocument.new(date: date)
-        DailyCopy.append(blocks, to: &doc)
+        guard !vault.exists(Vault.dailyPath(date)) else { return }
+        let doc = newDaily(date)
+        guard !doc.entries.isEmpty else { return }
         try? vault.write(Vault.dailyPath(date), doc.text)
         revision += 1
     }
