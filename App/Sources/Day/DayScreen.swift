@@ -117,7 +117,7 @@ struct DaySecondaryActions: View {
             .disabled((model.doc?.entries.count ?? 0) < 2)
         Button {
             app.ai.runQuick(.dayPlan, target: model.path, date: model.date)
-        } label: { Label("Plan with AI", systemImage: "wand.and.sparkles") }
+        } label: { Label(QuickKind.dayPlan.label, systemImage: "wand.and.sparkles") }
             .disabled(app.ai.quickRunning)
         Button {
             app.openChat(attachments: [model.path], text: "Let's look at this day's records and adjust them.")

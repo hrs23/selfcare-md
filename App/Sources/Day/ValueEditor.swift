@@ -155,7 +155,7 @@ struct DirectInput: View {
         HStack(spacing: 2) {
             TextField("0", text: $text)
                 .multilineTextAlignment(.trailing)
-                .keyboardType(field == .duration ? .numbersAndPunctuation : (field == .weight ? .numbersAndPunctuation : .decimalPad))
+                .keyboardType(field == .duration || field == .weight ? .numbersAndPunctuation : .decimalPad)
                 .font(.body.monospacedDigit())
                 .focused($focused)
                 .onSubmit(commit)

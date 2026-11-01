@@ -119,11 +119,7 @@ struct MenuEditorView: View {
             guard let item else { return }
             Task { await importPhoto(item) }
         }
-        .alert("Cannot save", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
-            Button("OK") {}
-        } message: {
-            Text(error ?? "")
-        }
+        .errorAlert("Cannot save", message: $error)
         .onAppear {
             guard !loaded else { return }
             loaded = true

@@ -85,7 +85,7 @@ struct ConversationList: View {
                     }
                 }
                 .onDelete { offsets in
-                    for i in offsets.map({ $0 }).sorted(by: >) { app.ai.delete(app.ai.conversations[i]) }
+                    for i in offsets.sorted(by: >) { app.ai.delete(app.ai.conversations[i]) }
                 }
             }
             .themed()

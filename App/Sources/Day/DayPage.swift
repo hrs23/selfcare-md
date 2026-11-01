@@ -53,7 +53,7 @@ struct DayPage: View {
                         Button {
                             app.ai.runQuick(.dayPlan, target: model.path, date: model.date)
                         } label: {
-                            Label("Plan with AI", systemImage: "wand.and.sparkles")
+                            Label(QuickKind.dayPlan.label, systemImage: "wand.and.sparkles")
                                 .labelStyle(.titleAndIcon)
                                 .frame(maxWidth: .infinity)
                         }
@@ -63,8 +63,6 @@ struct DayPage: View {
                     }
                 }
                 QuickStatusSection(target: model.path)
-            }
-            if model.doc?.fileProblem == nil && !model.unreadable {
                 Section("Memo") {
                     TextField("", text: $memo, axis: .vertical)
                         .lineLimit(3...)

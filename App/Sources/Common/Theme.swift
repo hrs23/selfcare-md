@@ -13,4 +13,12 @@ extension View {
     func themed() -> some View {
         scrollContentBackground(.hidden).background(Theme.canvas)
     }
+
+    func errorAlert(_ title: String, message: Binding<String?>) -> some View {
+        alert(title, isPresented: Binding(get: { message.wrappedValue != nil }, set: { if !$0 { message.wrappedValue = nil } })) {
+            Button("OK") {}
+        } message: {
+            Text(message.wrappedValue ?? "")
+        }
+    }
 }

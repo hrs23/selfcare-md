@@ -45,11 +45,7 @@ struct RootView: View {
                 Button("Done") { KeyboardDismisser.dismiss() }
             }
         }
-        .alert("Error", isPresented: Binding(get: { app.alert != nil }, set: { if !$0 { app.alert = nil } })) {
-            Button("OK") {}
-        } message: {
-            Text(app.alert ?? "")
-        }
+        .errorAlert("Error", message: $app.alert)
     }
 }
 
