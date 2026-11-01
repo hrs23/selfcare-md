@@ -78,6 +78,14 @@ final class AIService {
         return ChatClient(endpoint: AIEndpoint(baseURL: url, apiKey: apiKey, anthropic: settings.preset == .anthropic))
     }
 
+    func setPreset(_ preset: AIPreset) {
+        settings.preset = preset
+        settings.model = nil
+        testResult = nil
+        models = app.settings.prefs.modelCache[cacheKey] ?? []
+        Task { await refreshModels() }
+    }
+
     func refreshModels() async {
         guard let client = client() else { return }
         if let list = try? await client.models(), !list.isEmpty {
