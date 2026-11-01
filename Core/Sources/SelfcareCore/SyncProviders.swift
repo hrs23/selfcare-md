@@ -164,7 +164,7 @@ public final class WebDAVProvider: SyncProvider, @unchecked Sendable {
     func request(_ path: String, method: String, directory: Bool = false) -> URLRequest {
         let encoded = path.split(separator: "/").map { String($0).addingPercentEncoding(withAllowedCharacters: .urlPathAllowed.subtracting(CharacterSet(charactersIn: "/?#;"))) ?? String($0) }.joined(separator: "/")
         let relative = encoded + (directory && !encoded.isEmpty ? "/" : "")
-        let url = relative.isEmpty ? base : (URL(string: relative, relativeTo: base)?.absoluteURL ?? base.appendingPathComponent(path))
+        let url = relative.isEmpty ? base : (URL(string: "./" + relative, relativeTo: base)?.absoluteURL ?? base.appendingPathComponent(path))
         var r = URLRequest(url: url)
         r.httpMethod = method
         r.timeoutInterval = 60
