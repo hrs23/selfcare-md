@@ -46,6 +46,7 @@ final class AppModel {
     var aiPath: [Route] = []
     var settingsPath: [Route] = []
     var pendingChat: PendingChat?
+    var requestedDay: String?
     var alert: String?
     var health: HealthService!
     var sync: SyncSession!
@@ -112,6 +113,12 @@ final class AppModel {
         for keyPath in Self.paths {
             self[keyPath: keyPath] = self[keyPath: keyPath].map { $0 == .menu(old) ? .menu(new) : $0 }
         }
+    }
+
+    func openDay(_ date: String) {
+        tab = .day
+        dayPath = []
+        requestedDay = date
     }
 
     func openChat(attachments: [String], text: String) {
@@ -220,7 +227,7 @@ final class AppModel {
         settings.prefs.lastActiveDay = today
         vaultChanged()
         if changedDay {
-            NotificationCenter.default.post(name: .dayChanged, object: nil)
+            requestedDay = today
         }
         try? ensureTodayCopied()
         Task {
@@ -228,8 +235,4 @@ final class AppModel {
             await sync.run(.automatic)
         }
     }
-}
-
-extension Notification.Name {
-    static let dayChanged = Notification.Name("selfcare.dayChanged")
 }
