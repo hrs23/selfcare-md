@@ -118,38 +118,5 @@ final class PackStore {
         reload()
     }
 
-    static let specOrder: [String] = [
-        "HKWorkoutActivityTypeRunning", "HKWorkoutActivityTypeWalking", "HKWorkoutActivityTypeHiking", "HKWorkoutActivityTypeCycling",
-        "HKWorkoutActivityTypeHandCycling", "HKWorkoutActivityTypeSwimming", "HKWorkoutActivityTypeWheelchairWalkPace",
-        "HKWorkoutActivityTypeWheelchairRunPace", "HKWorkoutActivityTypeRowing", "HKWorkoutActivityTypePaddleSports",
-        "HKWorkoutActivityTypeCrossCountrySkiing", "HKWorkoutActivityTypeDownhillSkiing", "HKWorkoutActivityTypeSnowboarding",
-        "HKWorkoutActivityTypeSkatingSports", "HKWorkoutActivityTypeSwimBikeRun", "HKWorkoutActivityTypeElliptical",
-        "HKWorkoutActivityTypeStairClimbing", "HKWorkoutActivityTypeStairs", "HKWorkoutActivityTypeStepTraining",
-        "HKWorkoutActivityTypeHighIntensityIntervalTraining", "HKWorkoutActivityTypeMixedCardio", "HKWorkoutActivityTypeJumpRope",
-        "HKWorkoutActivityTypeCrossTraining", "HKWorkoutActivityTypeFunctionalStrengthTraining",
-        "HKWorkoutActivityTypeTraditionalStrengthTraining", "HKWorkoutActivityTypeCoreTraining", "HKWorkoutActivityTypeYoga",
-        "HKWorkoutActivityTypePilates", "HKWorkoutActivityTypeBarre", "HKWorkoutActivityTypeFlexibility",
-        "HKWorkoutActivityTypeMindAndBody", "HKWorkoutActivityTypeTaiChi", "HKWorkoutActivityTypeCooldown",
-        "HKWorkoutActivityTypePreparationAndRecovery", "HKWorkoutActivityTypeCardioDance", "HKWorkoutActivityTypeSocialDance",
-        "HKWorkoutActivityTypeKickboxing", "HKWorkoutActivityTypeBoxing", "HKWorkoutActivityTypeMartialArts",
-        "HKWorkoutActivityTypeWrestling", "HKWorkoutActivityTypeFencing", "HKWorkoutActivityTypeClimbing",
-        "HKWorkoutActivityTypeGymnastics", "HKWorkoutActivityTypeTrackAndField", "HKWorkoutActivityTypeFitnessGaming",
-        "HKWorkoutActivityTypePlay", "HKWorkoutActivityTypeWaterFitness", "HKWorkoutActivityTypeWaterPolo",
-        "HKWorkoutActivityTypeWaterSports", "HKWorkoutActivityTypeSurfingSports", "HKWorkoutActivityTypeSailing",
-        "HKWorkoutActivityTypeUnderwaterDiving", "HKWorkoutActivityTypeSnowSports", "HKWorkoutActivityTypeCurling",
-        "HKWorkoutActivityTypeHockey", "HKWorkoutActivityTypeAmericanFootball", "HKWorkoutActivityTypeAustralianFootball",
-        "HKWorkoutActivityTypeSoccer", "HKWorkoutActivityTypeRugby", "HKWorkoutActivityTypeBasketball",
-        "HKWorkoutActivityTypeVolleyball", "HKWorkoutActivityTypeHandball", "HKWorkoutActivityTypeLacrosse",
-        "HKWorkoutActivityTypeBaseball", "HKWorkoutActivityTypeSoftball", "HKWorkoutActivityTypeCricket",
-        "HKWorkoutActivityTypeTennis", "HKWorkoutActivityTypeTableTennis", "HKWorkoutActivityTypeBadminton",
-        "HKWorkoutActivityTypeSquash", "HKWorkoutActivityTypeRacquetball", "HKWorkoutActivityTypePickleball",
-        "HKWorkoutActivityTypeDiscSports", "HKWorkoutActivityTypeGolf", "HKWorkoutActivityTypeArchery",
-        "HKWorkoutActivityTypeBowling", "HKWorkoutActivityTypeEquestrianSports", "HKWorkoutActivityTypeFishing",
-        "HKWorkoutActivityTypeHunting", "HKWorkoutActivityTypeTransition", "HKWorkoutActivityTypeOther",
-        "HKCategoryTypeIdentifierMindfulSession", "HKQuantityTypeIdentifierBodyMass", "HKQuantityTypeIdentifierBodyFatPercentage",
-        "HKCorrelationTypeIdentifierBloodPressure", "HKQuantityTypeIdentifierBodyTemperature", "HKQuantityTypeIdentifierRestingHeartRate",
-        "HKCategoryTypeIdentifierToothbrushingEvent", "HKCategoryTypeIdentifierHandwashingEvent", "HKQuantityTypeIdentifierDietaryWater",
-        "HKQuantityTypeIdentifierNumberOfAlcoholicBeverages", "HKCategoryTypeIdentifierSleepAnalysis", "HKQuantityTypeIdentifierStepCount",
-        "HKQuantityTypeIdentifierActiveEnergyBurned", "HKQuantityTypeIdentifierAppleExerciseTime",
-    ]
+    static let specOrder: [String] = HealthTypes.workoutTypes.map { "HKWorkoutActivityType" + $0.0 } + HealthTypes.others.map(\.constant)
 }
