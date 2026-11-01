@@ -144,7 +144,10 @@ public final class SyncEngine: @unchecked Sendable {
         let (local, unreadable) = localFiles()
         skipped += unreadable.sorted().map { "Could not read: \($0)" }
         var needsVersion: [String] = []
-        let paths = Set(remote.keys).union(local.keys).union(state.base.keys).subtracting(unreadable).sorted()
+        let all = Set(remote.keys).union(local.keys).union(state.base.keys)
+        let collisions = caseInsensitiveVolume ? Self.caseCollisions(all) : []
+        skipped += collisions.map { "Names differ only by case: " + $0.joined(separator: ", ") }
+        let paths = all.subtracting(unreadable).subtracting(collisions.joined()).sorted()
         for path in paths {
             try Task.checkCancellation()
             let l = local[path]
@@ -223,6 +226,17 @@ public final class SyncEngine: @unchecked Sendable {
             save(state)
         }
         state.hashes = state.hashes.filter { vault.exists($0.key) }
+    }
+
+    private var caseInsensitiveVolume: Bool {
+        (try? vault.root.resourceValues(forKeys: [.volumeSupportsCaseSensitiveNamesKey]).volumeSupportsCaseSensitiveNames) == false
+    }
+
+    static func caseCollisions(_ paths: Set<String>) -> [[String]] {
+        Dictionary(grouping: paths) { $0.lowercased() }.values
+            .filter { $0.count > 1 }
+            .map { $0.sorted() }
+            .sorted { $0[0] < $1[0] }
     }
 
     private func download(_ path: String, version: String) async throws {
