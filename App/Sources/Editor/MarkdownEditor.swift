@@ -137,7 +137,7 @@ struct MarkdownEditorView: View {
     }
 
     func checkExternal() {
-        guard loaded, !externalChange else { return }
+        guard loaded, !externalChange || readError != nil else { return }
         let disk = diskText()
         if disk != baseline {
             if dirty {
