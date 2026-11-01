@@ -72,8 +72,11 @@ public struct ZipEntry: Sendable, Hashable {
 }
 
 public enum Zip {
+    public static let maxEntrySize = 50 << 20
+    public static let maxTotalSize = 200 << 20
+
     public static func read(_ data: Data) throws -> [ZipEntry] {
-        try read(data, maxEntrySize: 50 << 20, maxTotalSize: 200 << 20)
+        try read(data, maxEntrySize: maxEntrySize, maxTotalSize: maxTotalSize)
     }
 
     static func read(_ data: Data, maxEntrySize: Int, maxTotalSize: Int) throws -> [ZipEntry] {
