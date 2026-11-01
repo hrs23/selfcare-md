@@ -243,8 +243,8 @@ public final class SyncEngine: @unchecked Sendable {
         let data = try await provider.read(path)
         do {
             try vault.writeData(path, data)
-        } catch let error as VaultError {
-            skipped.append(error.localizedDescription)
+        } catch {
+            skipped.append("\(path): \(error.localizedDescription)")
             return
         }
         state.base[path] = SyncBase(localHash: SyncHash.of(data), remoteVersion: version)

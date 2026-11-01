@@ -107,6 +107,18 @@ struct SyncTests {
         #expect(engine.state.base["~x.md"] == nil)
     }
 
+    @Test func unwritableDownloadIsSkipped() async throws {
+        let vault = tempVault()
+        let remote = MemoryProvider()
+        try vault.write("a/x.md", "x")
+        remote.files["a"] = Data("a\n".utf8)
+        remote.files["z.md"] = Data("z\n".utf8)
+        let engine = SyncEngine(vault: vault, provider: remote, state: SyncState(), save: { _ in })
+        try await engine.sync()
+        #expect(try vault.read("z.md") == "z\n")
+        #expect(engine.state.lastError?.contains("a") == true)
+    }
+
     @Test func unreadableLocalFileIsNotDeleted() async throws {
         let vault = tempVault()
         let remote = MemoryProvider()
