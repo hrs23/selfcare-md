@@ -51,16 +51,12 @@ final class ChatSession {
             conversation.title = String((text.isEmpty ? attachments.joined(separator: ", ") : text).prefix(60))
         }
         conversation.messages.append(message)
-        displayTexts[message.id] = text
         input = ""
         attachments = []
         start()
     }
 
-    var displayTexts: [UUID: String] = [:]
-
     func displayText(_ message: ChatMessage) -> String {
-        if let t = displayTexts[message.id] { return t }
         guard message.role == .user else { return message.text }
         var t = message.text
         if let r = t.range(of: "\n\n<file path=") { t = String(t[..<r.lowerBound]) }
