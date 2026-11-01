@@ -262,6 +262,8 @@ struct WebDAVRequestTests {
         #expect(p.request("", method: "PROPFIND", directory: true).url?.absoluteString == "https://dav.example.com/files/me/")
         #expect(p.request("menus/Back Squat.md", method: "GET").url?.absoluteString == "https://dav.example.com/files/me/menus/Back%20Squat.md")
         #expect(p.request("menus", method: "MKCOL", directory: true).url?.absoluteString == "https://dav.example.com/files/me/menus/")
+        #expect(p.request("a:b.md", method: "GET").url?.absoluteString == "https://dav.example.com/files/me/a:b.md")
+        #expect(p.request("c:d", method: "MKCOL", directory: true).url?.absoluteString == "https://dav.example.com/files/me/c:d/")
     }
 }
 
