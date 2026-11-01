@@ -39,17 +39,8 @@ struct RootView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .onChange(of: app.tab) { _, _ in dismissKeyboard() }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") { dismissKeyboard() }
-            }
-        }
+        .keyboardDoneButton()
         .errorAlert("Error", message: $app.alert)
-    }
-
-    func dismissKeyboard() {
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 

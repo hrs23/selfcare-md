@@ -106,6 +106,7 @@ struct DayPage: View {
                 model.saveMemo(memo)
             }
         }
+        .keyboardDoneButton()
         .overlay { CelebrationView(trigger: model.celebration) }
         .sensoryFeedback(.impact(weight: .medium), trigger: model.completionPulse)
         .confirmationDialog("Create Menu?", isPresented: Binding(get: { creating != nil }, set: { if !$0 { creating = nil } }), titleVisibility: .visible) {
