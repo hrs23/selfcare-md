@@ -27,8 +27,7 @@ struct DayPage: View {
     @State private var memo = ""
     @State private var memoTask: Task<Void, Never>?
     @FocusState private var memoFocused: Bool
-    @State private var createName: String?
-    @State private var createApple: (type: String, name: String)?
+    @State private var creating: Entry?
     @State private var reassigning: Entry?
 
     var body: some View {
@@ -93,18 +92,10 @@ struct DayPage: View {
         }
         .overlay { CelebrationView(trigger: model.celebration) }
         .sensoryFeedback(.impact(weight: .medium), trigger: model.completionPulse)
-        .confirmationDialog("Create Menu?", isPresented: Binding(get: { createName != nil }, set: { if !$0 { createName = nil } }), titleVisibility: .visible) {
-            Button("Create “\(createName ?? "")”") {
-                if let name = createName { app.show(.newMenu(name)) }
-                createName = nil
-            }
-        }
-        .confirmationDialog("Create Menu?", isPresented: Binding(get: { createApple != nil }, set: { if !$0 { createApple = nil } }), titleVisibility: .visible) {
-            Button("Create “\(createApple?.name ?? "")”") {
-                if let c = createApple {
-                    do { try app.createMenuFromApple(c.type, name: c.name) } catch { app.alert = error.localizedDescription }
-                }
-                createApple = nil
+        .confirmationDialog("Create Menu?", isPresented: Binding(get: { creating != nil }, set: { if !$0 { creating = nil } }), titleVisibility: .visible) {
+            Button("Create “\(creating?.name ?? "")”") {
+                if let entry = creating { createMenu(for: entry) }
+                creating = nil
             }
         }
         .sheet(item: $reassigning) { entry in
@@ -123,6 +114,14 @@ struct DayPage: View {
             try? await Task.sleep(for: .milliseconds(700))
             guard !Task.isCancelled else { return }
             model.saveMemo(text)
+        }
+    }
+
+    private func createMenu(for entry: Entry) {
+        if entry.isImported, let type = app.healthType(for: entry) {
+            do { try app.createMenuFromApple(type, name: entry.name) } catch { app.alert = error.localizedDescription }
+        } else {
+            app.show(.newMenu(entry.name))
         }
     }
 
@@ -185,9 +184,9 @@ struct DayPage: View {
             }
             .tint(.primary)
         case let .entry(e):
-            EntryRow(model: model, entry: e, onMissing: { createName = e.name }, onCreateApple: { createApple = $0 }, onReassign: { reassigning = e })
+            EntryRow(model: model, entry: e, onCreate: { creating = e }, onReassign: { reassigning = e })
         case let .setsHeader(e):
-            SetsHeaderRow(model: model, entry: e, onMissing: { createName = e.name }, onCreateApple: { createApple = $0 }, onReassign: { reassigning = e })
+            SetsHeaderRow(model: model, entry: e, onCreate: { creating = e }, onReassign: { reassigning = e })
         case let .set(e, s):
             SetRow(model: model, entry: e, item: s)
         case let .editor(e, s):
