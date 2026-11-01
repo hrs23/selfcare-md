@@ -8,7 +8,7 @@ Requirements: Xcode 26 (Swift 6.2) and [XcodeGen](https://github.com/yonaskolb/X
 
 - `Core/` is a Swift package with the logic and its tests: `swift test --package-path Core`
 - `App/` is the iOS app: `xcodegen generate`, then open `SelfcareMD.xcodeproj`
-- Debug builds embed an OpenAI API key for testing the assistant if one is set in `DEBUG_OPENAI_API_KEY` or `~/.config/selfcare-md/debug-openai-key`. Release builds never include it.
+- Builds embed an OpenAI API key for testing the assistant if one is set in `DEBUG_OPENAI_API_KEY` or `~/.config/selfcare-md/debug-openai-key`; the button that fills it in appears only in Debug and TestFlight builds. Build without it for anything you distribute.
 - The WebDAV integration test runs only when `SELFCARE_WEBDAV_URL` is set (with `SELFCARE_WEBDAV_USER` and `SELFCARE_WEBDAV_PASSWORD`).
 
 ## Vault

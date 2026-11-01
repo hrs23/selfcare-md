@@ -88,7 +88,7 @@ struct AISettingsView: View {
                     }
                 }
             }
-            if BuildInfo.debugOpenAIKey != nil {
+            if BuildInfo.showsDebugTools {
                 Section {
                     Button("Fill API key (debug)") {
                         ai.applyDebugKey()

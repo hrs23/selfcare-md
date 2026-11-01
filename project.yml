@@ -57,12 +57,9 @@ targets:
       - name: Debug OpenAI key
         basedOnDependencyAnalysis: false
         script: |
-          KEY=""
-          if [ "$CONFIGURATION" = "Debug" ]; then
-            KEY="${DEBUG_OPENAI_API_KEY:-}"
-            FILE="$HOME/.config/selfcare-md/debug-openai-key"
-            if [ -z "$KEY" ] && [ -f "$FILE" ]; then KEY="$(tr -d '\n\r ' < "$FILE")"; fi
-          fi
+          KEY="${DEBUG_OPENAI_API_KEY:-}"
+          FILE="$HOME/.config/selfcare-md/debug-openai-key"
+          if [ -z "$KEY" ] && [ -f "$FILE" ]; then KEY="$(tr -d '\n\r ' < "$FILE")"; fi
           PLIST="$TARGET_BUILD_DIR/$INFOPLIST_PATH"
           [ -f "$PLIST" ] || exit 0
           /usr/libexec/PlistBuddy -c "Delete :SelfcareDebugOpenAIKey" "$PLIST" >/dev/null 2>&1 || true

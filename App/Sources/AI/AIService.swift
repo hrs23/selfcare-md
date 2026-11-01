@@ -119,7 +119,10 @@ final class AIService {
     }
 
     func applyDebugKey() {
-        guard let key = BuildInfo.debugOpenAIKey else { return }
+        guard let key = BuildInfo.debugOpenAIKey else {
+            app.alert = "No debug key in this build"
+            return
+        }
         settings.preset = .openai
         settings.model = nil
         apiKey = key
