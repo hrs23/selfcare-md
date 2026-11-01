@@ -108,7 +108,7 @@ public enum PackInstaller {
             try vault.write(target, text)
             let menu = MenuFile(name: name, text: text, appleHealthTypes: [])
             for ref in menu.imageReferences {
-                guard let source = ImageResolver.resolve(ref, fromDirectory: "menus", files: packFiles) else { continue }
+                guard let source = ImageResolver.resolve(ref, fromDirectory: "menus", files: packFiles), VaultTools.isImage(source) else { continue }
                 if vault.exists(source) && !replacing { continue }
                 let data = try Data(contentsOf: pack.root.appendingPathComponent(source))
                 try vault.writeData(source, data)
@@ -210,7 +210,7 @@ public enum PackInstaller {
             let text = String(decoding: data, as: UTF8.self)
             let file = MenuFile(name: menu, text: text, appleHealthTypes: [])
             for ref in file.imageReferences {
-                guard let source = ImageResolver.resolve(ref, fromDirectory: "menus", files: files), !added.contains(source) else { continue }
+                guard let source = ImageResolver.resolve(ref, fromDirectory: "menus", files: files), VaultTools.isImage(source), !added.contains(source) else { continue }
                 added.insert(source)
                 entries.append(ZipEntry(path: "\(packName)/\(source)", data: try vault.readData(source)))
             }
