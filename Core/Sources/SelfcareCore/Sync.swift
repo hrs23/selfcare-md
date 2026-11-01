@@ -283,11 +283,6 @@ public final class SyncEngine: @unchecked Sendable {
         return try await provider.write(path, data)
     }
 
-    public func remoteData(_ path: String) async throws -> Data? {
-        guard let conflict = state.conflicts[path], !conflict.remoteDeleted else { return nil }
-        return try await provider.read(path)
-    }
-
     public enum Resolution: Sendable {
         case local
         case remote

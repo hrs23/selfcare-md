@@ -19,6 +19,34 @@ final class BrokenWriteProvider: SyncProvider, @unchecked Sendable {
     func delete(_ path: String) async throws { try await inner.delete(path) }
 }
 
+final class ReadGatedProvider: SyncProvider, @unchecked Sendable {
+    let inner = MemoryProvider()
+    let entered: AsyncStream<Void>
+    let release: AsyncStream<Void>
+    private let enteredContinuation: AsyncStream<Void>.Continuation
+    let releaseContinuation: AsyncStream<Void>.Continuation
+    var gated = false
+
+    init() {
+        (entered, enteredContinuation) = AsyncStream.makeStream()
+        (release, releaseContinuation) = AsyncStream.makeStream()
+    }
+
+    func list() async throws -> [RemoteItem] { try await inner.list() }
+
+    func read(_ path: String) async throws -> Data {
+        if gated {
+            gated = false
+            enteredContinuation.yield()
+            for await _ in release { break }
+        }
+        return try await inner.read(path)
+    }
+
+    func write(_ path: String, _ data: Data) async throws -> String? { try await inner.write(path, data) }
+    func delete(_ path: String) async throws { try await inner.delete(path) }
+}
+
 func server(_ name: String) -> SyncConfig {
     .webdav(WebDAVConfig(url: "https://\(name).example.com/", username: "u", password: "p"))
 }
@@ -144,6 +172,50 @@ struct SyncSessionTests {
         #expect(session.pendingPreview == nil)
         #expect(try vault.read("menus/B.md") == "b\n")
         #expect(p.inner.files["menus/A.md"] == Data("a\n".utf8))
+    }
+
+    @Test func remoteDataDoesNotWaitForRunningSync() async throws {
+        let vault = tempVault()
+        let p = GatedProvider(gated: false)
+        p.inner.files["menus/A.md"] = Data("a\n".utf8)
+        let session = makeSession(vault, ["one": p], connectedTo: "one")
+        await session.run(.manual)
+        try vault.write("menus/A.md", "local")
+        p.inner.files["menus/A.md"] = Data("remote\n".utf8)
+        await session.run(.manual)
+        #expect(session.conflicts.map(\.path) == ["menus/A.md"])
+
+        p.arm()
+        let run = Task { await session.run(.manual) }
+        for await _ in p.entered { break }
+        let fallback = Task {
+            try? await Task.sleep(for: .seconds(2))
+            p.releaseContinuation.yield()
+        }
+        let data = await session.remoteData("menus/A.md")
+        #expect(data == Data("remote\n".utf8))
+        #expect(session.running)
+        fallback.cancel()
+        p.releaseContinuation.yield()
+        await run.value
+    }
+
+    @Test func remoteDataDoesNotMarkRunning() async throws {
+        let vault = tempVault()
+        let p = ReadGatedProvider()
+        p.inner.files["menus/A.md"] = Data("remote\n".utf8)
+        try vault.write("menus/A.md", "local")
+        let session = makeSession(vault, ["one": p], connectedTo: "one")
+        await session.run(.manual)
+        await session.confirm()
+        #expect(session.conflicts.map(\.path) == ["menus/A.md"])
+
+        p.gated = true
+        let reading = Task { await session.remoteData("menus/A.md") }
+        for await _ in p.entered { break }
+        #expect(!session.running)
+        p.releaseContinuation.yield()
+        #expect(await reading.value == Data("remote\n".utf8))
     }
 
     @Test func massDeletionWaitsForConfirm() async throws {

@@ -77,7 +77,8 @@ public final class SyncSession {
     }
 
     public func remoteData(_ path: String) async -> Data? {
-        try? await exclusive { try await self.makeEngine()?.remoteData(path) }
+        guard let conflict = state.conflicts[path], !conflict.remoteDeleted, let provider = try? makeEngine()?.provider else { return nil }
+        return try? await provider.read(path)
     }
 
     private func replace(with config: SyncConfig?, then body: @escaping @MainActor () async -> Void) async throws {
