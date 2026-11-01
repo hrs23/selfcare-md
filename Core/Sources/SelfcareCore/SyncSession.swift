@@ -51,7 +51,7 @@ public final class SyncSession {
             do {
                 guard let engine = try self.makeEngine() else { return }
                 self.pendingPreview = nil
-                try await self.sync(engine)
+                try await self.sync(engine, allowingMassDeletion: true)
             } catch {
                 self.record(error, generation: generation)
             }
@@ -129,18 +129,20 @@ public final class SyncSession {
                 }
             }
             pendingPreview = nil
-            try await sync(engine)
+            try await sync(engine, allowingMassDeletion: false)
+        } catch let SyncError.massDeletion(local, remote) {
+            pendingPreview = SyncPreview(localCount: 0, remoteCount: 0, conflictCount: 0, localDeletions: local, remoteDeletions: remote)
         } catch {
             record(error, generation: generation)
         }
     }
 
-    private func sync(_ engine: SyncEngine) async throws {
+    private func sync(_ engine: SyncEngine, allowingMassDeletion: Bool) async throws {
         defer {
             state = engine.state
             onVaultChange()
         }
-        try await engine.sync()
+        try await engine.sync(allowingMassDeletion: allowingMassDeletion)
     }
 
     private func record(_ error: Error, generation: Int) {

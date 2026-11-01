@@ -26,9 +26,14 @@ struct SyncSettingsView: View {
                     }
                     if let preview = sync.pendingPreview {
                         Section {
-                            LabeledContent("On this iPhone", value: "\(preview.localCount)")
-                            LabeledContent("On the server", value: "\(preview.remoteCount)")
-                            LabeledContent("Conflicts", value: "\(preview.conflictCount)")
+                            if preview.localDeletions + preview.remoteDeletions > 0 {
+                                LabeledContent("Delete on this iPhone", value: "\(preview.localDeletions)")
+                                LabeledContent("Delete on the server", value: "\(preview.remoteDeletions)")
+                            } else {
+                                LabeledContent("On this iPhone", value: "\(preview.localCount)")
+                                LabeledContent("On the server", value: "\(preview.remoteCount)")
+                                LabeledContent("Conflicts", value: "\(preview.conflictCount)")
+                            }
                             Button("Start sync") { Task { await sync.confirm() } }
                             Button("Disconnect", role: .destructive) { Task { await sync.disconnect() } }
                         }

@@ -6,6 +6,7 @@ public enum SyncError: Error, LocalizedError, Equatable {
     case invalidConfig(String)
     case badResponse
     case busy
+    case massDeletion(local: Int, remote: Int)
 
     public var errorDescription: String? {
         switch self {
@@ -18,6 +19,7 @@ public enum SyncError: Error, LocalizedError, Equatable {
         case let .invalidConfig(m): m
         case .badResponse: "Unexpected server response"
         case .busy: "Sync is already running"
+        case let .massDeletion(local, remote): "Sync paused: it would delete \(local) files on this device and \(remote) on the server"
         }
     }
 }
