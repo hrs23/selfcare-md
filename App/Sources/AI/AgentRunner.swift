@@ -2,40 +2,6 @@ import Foundation
 import SelfcareCore
 import UIKit
 
-nonisolated final class WriteRecorder: @unchecked Sendable {
-    private let lock = NSLock()
-    private var originals: [String: Data?] = [:]
-    let vault: Vault
-
-    init(vault: Vault) {
-        self.vault = vault
-    }
-
-    func record(_ path: String) -> Bool {
-        lock.withLock {
-            if originals.keys.contains(path) { return true }
-            if vault.exists(path) {
-                guard let data = try? vault.readData(path) else { return false }
-                originals[path] = .some(data)
-            } else {
-                originals[path] = .some(nil)
-            }
-            return true
-        }
-    }
-
-    func created(_ path: String) -> Bool {
-        lock.withLock {
-            guard let original = originals[path] else { return false }
-            return original == nil
-        }
-    }
-
-    var snapshot: [String: Data?] {
-        lock.withLock { originals }
-    }
-}
-
 enum ImageScaler {
     static func chatImage(_ data: Data, maxSide: CGFloat = 1024) -> ChatImage? {
         guard let image = UIImage(data: data) else { return nil }
