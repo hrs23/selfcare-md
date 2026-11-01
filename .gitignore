@@ -9,3 +9,5 @@ build/
 DerivedData/
 Core/.swiftpm/
 .playwright-cli/
+App/Info.plist
+App/SelfcareMD.entitlements
