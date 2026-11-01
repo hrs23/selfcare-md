@@ -67,6 +67,15 @@ public struct UnitPreferences: Sendable, Codable, Hashable {
         self.temperature = temperature
     }
 
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = UnitPreferences.defaults(for: .current)
+        weight = c.decode(.weight, default: d.weight)
+        distance = c.decode(.distance, default: d.distance)
+        volume = c.decode(.volume, default: d.volume)
+        temperature = c.decode(.temperature, default: d.temperature)
+    }
+
     public static func defaults(for locale: Locale) -> UnitPreferences {
         switch locale.measurementSystem {
         case .us:
