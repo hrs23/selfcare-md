@@ -70,6 +70,10 @@ public enum TCX {
         formatter.string(from: d)
     }
 
+    static func int(_ v: Double) -> Int? {
+        Int(exactly: v.rounded())
+    }
+
     static func num(_ v: Double, _ digits: Int = 2) -> String {
         NumberText.format(v, max: digits)
     }
@@ -133,14 +137,16 @@ public enum TCX {
             xml += "      <Lap StartTime=\"\(time(lap.start))\">\n"
             xml += "        <TotalTimeSeconds>\(num(lap.duration, 1))</TotalTimeSeconds>\n"
             xml += "        <DistanceMeters>\(num(lapDistance, 1))</DistanceMeters>\n"
-            xml += "        <Calories>\(Int(calories.rounded()))</Calories>\n"
-            if !hr.isEmpty {
-                xml += "        <AverageHeartRateBpm><Value>\(Int((hr.reduce(0, +) / Double(hr.count)).rounded()))</Value></AverageHeartRateBpm>\n"
-                xml += "        <MaximumHeartRateBpm><Value>\(Int((hr.max() ?? 0).rounded()))</Value></MaximumHeartRateBpm>\n"
+            if let calories = int(calories) {
+                xml += "        <Calories>\(calories)</Calories>\n"
+            }
+            if !hr.isEmpty, let average = int(hr.reduce(0, +) / Double(hr.count)), let maximum = int(hr.max() ?? 0) {
+                xml += "        <AverageHeartRateBpm><Value>\(average)</Value></AverageHeartRateBpm>\n"
+                xml += "        <MaximumHeartRateBpm><Value>\(maximum)</Value></MaximumHeartRateBpm>\n"
             }
             xml += "        <Intensity>Active</Intensity>\n"
-            if input.sport == "Biking", !lapCadence.isEmpty {
-                xml += "        <Cadence>\(min(254, Int((lapCadence.reduce(0, +) / Double(lapCadence.count)).rounded())))</Cadence>\n"
+            if input.sport == "Biking", !lapCadence.isEmpty, let cadence = int(lapCadence.reduce(0, +) / Double(lapCadence.count)) {
+                xml += "        <Cadence>\(min(254, cadence))</Cadence>\n"
             }
             xml += "        <TriggerMethod>Manual</TriggerMethod>\n"
             let points = sortedTimes.filter(inLap)
@@ -158,11 +164,11 @@ public enum TCX {
                     if let d = distance(at: t) {
                         xml += "            <DistanceMeters>\(num(d, 1))</DistanceMeters>\n"
                     }
-                    if let h = nearest(hrSorted, t, within: 10) {
-                        xml += "            <HeartRateBpm><Value>\(Int(h.rounded()))</Value></HeartRateBpm>\n"
+                    if let h = nearest(hrSorted, t, within: 10).flatMap(int) {
+                        xml += "            <HeartRateBpm><Value>\(h)</Value></HeartRateBpm>\n"
                     }
-                    if input.sport == "Biking", let c = nearest(cadenceSorted, t, within: 10) {
-                        xml += "            <Cadence>\(min(254, Int(c.rounded())))</Cadence>\n"
+                    if input.sport == "Biking", let c = nearest(cadenceSorted, t, within: 10).flatMap(int) {
+                        xml += "            <Cadence>\(min(254, c))</Cadence>\n"
                     }
                     xml += "          </Trackpoint>\n"
                 }
