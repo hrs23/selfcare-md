@@ -48,6 +48,7 @@ public struct Frontmatter: Sendable, Hashable {
             entries.removeAll { $0.key == key }
             return
         }
+        guard self[key] != value else { return }
         let lines = Self.render(key: key, value: value)
         if let index = entries.firstIndex(where: { $0.key == key }) {
             entries[index] = .pair(key: key, lines: lines)
