@@ -57,7 +57,7 @@ struct CopySheet: View {
                     .themed()
                 default:
                     List {
-                        if let t = app.template(), t.fileProblem == nil, !t.entries.isEmpty {
+                        if let t = try? app.template(), t.fileProblem == nil, !t.entries.isEmpty {
                             preview(t)
                         }
                     }
@@ -169,14 +169,14 @@ struct TemplateEditorView: View {
     }
 
     func load() {
-        doc = app.template() ?? DailyDocument.newTemplate()
+        doc = (try? app.template()) ?? DailyDocument.newTemplate()
     }
 
     func mutate(_ change: (inout DailyDocument) -> Void) {
-        var d = app.template() ?? DailyDocument.newTemplate()
-        guard d.fileProblem == nil else { return }
-        change(&d)
         do {
+            var d = try app.template() ?? DailyDocument.newTemplate()
+            guard d.fileProblem == nil else { return }
+            change(&d)
             try app.vault.write(Vault.templatePath, d.text)
             doc = d
             app.vaultChanged()

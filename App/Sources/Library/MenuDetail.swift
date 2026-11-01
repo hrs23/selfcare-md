@@ -162,13 +162,13 @@ struct MenuDetailView: View {
             model.load()
             model.add(menu: menu)
         } else {
-            var t = app.template() ?? DailyDocument.newTemplate()
-            guard t.fileProblem == nil else {
-                app.alert = "The template has a problem"
-                return
-            }
-            t.addEntry(name: menu.name, record: menu.record)
             do {
+                var t = try app.template() ?? DailyDocument.newTemplate()
+                guard t.fileProblem == nil else {
+                    app.alert = "The template has a problem"
+                    return
+                }
+                t.addEntry(name: menu.name, record: menu.record)
                 try app.vault.write(Vault.templatePath, t.text)
                 app.vaultChanged()
             } catch {
