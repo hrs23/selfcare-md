@@ -37,15 +37,19 @@ struct RootView: View {
             }
             .badge(app.sync.failing ? Text("!") : nil)
         }
-        .onAppear { KeyboardDismisser.shared.install() }
-        .onChange(of: app.tab) { _, _ in KeyboardDismisser.dismiss() }
+        .scrollDismissesKeyboard(.interactively)
+        .onChange(of: app.tab) { _, _ in dismissKeyboard() }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button("Done") { KeyboardDismisser.dismiss() }
+                Button("Done") { dismissKeyboard() }
             }
         }
         .errorAlert("Error", message: $app.alert)
+    }
+
+    func dismissKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 
