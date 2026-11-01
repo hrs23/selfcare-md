@@ -85,6 +85,14 @@ struct ValueTests {
         }
     }
 
+    @Test func bareMinutes() {
+        #expect(ValueParser.minutes("1.5") == .duration(90))
+        #expect(ValueParser.minutes("30") == .duration(1800))
+        for raw in ["1e20", "inf", "nan", "-1", "1:30", "abc"] {
+            #expect(ValueParser.minutes(raw) == nil)
+        }
+    }
+
     @Test func fieldOrder() {
         let v = Value([.duration(1680), .distance(5, .km), .heartRate(150)])
         #expect(v.text == "5.0km × 28:00 × 150bpm")
