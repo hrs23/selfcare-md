@@ -123,8 +123,6 @@ public struct MenuFile: Sendable, Hashable, Identifiable {
         self.init(name: name, text: text, appleHealthTypes: appleHealthTypes)
     }
 
-    public var text: String { file.text }
-
     public var imageReferences: [String] {
         var refs: [String] = []
         if let thumbnail { refs.append(thumbnail) }
