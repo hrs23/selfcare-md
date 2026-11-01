@@ -150,6 +150,21 @@ struct PackAndToolTests {
         #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent("menus/A.md").path))
     }
 
+    @Test func copyAndExportFollowOnlyImages() throws {
+        let data = Zip.write([
+            ZipEntry(path: "P/menus/A.md", data: Data("---\nrecord: check\n---\n\n![x](../daily/2026-01-01.md)\n".utf8)),
+            ZipEntry(path: "P/daily/2026-01-01.md", data: Data("pack daily\n".utf8)),
+        ])
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let pack = Pack(id: "P", name: "P", root: try PackInstaller.importZip(data, suggestedName: "P.zip", into: dir), isBundled: false, language: nil)
+        let vault = tempVault()
+        try vault.write("daily/2026-01-01.md", "mine")
+        try PackInstaller.copy(menus: ["A"], from: pack, to: vault, replacing: true)
+        #expect(try vault.read("daily/2026-01-01.md") == "mine\n")
+        let exported = try PackInstaller.export(name: "Out", menus: ["A"], vault: vault)
+        #expect(try Zip.read(exported).map(\.path) == ["Out/menus/A.md"])
+    }
+
     @Test func copyReplacesOnlyWhenAsked() throws {
         let pack = try importPack("P", image: 1)
         let vault = tempVault()
