@@ -135,7 +135,7 @@ final class DayModel {
     func initialValue(for entry: Entry, menu: MenuFile?) -> Value {
         let fields = menu?.fields ?? []
         guard !fields.isEmpty else { return Value() }
-        if let prev = app.index.previousValue(app.vault, menu: entry.name, date: date, current: doc, beforeLine: entry.endLine + 1), !prev.isEmpty {
+        if let prev = VaultIndex.previousValue(in: app.index.dailies(app.vault), menu: entry.name, date: date, current: doc, beforeLine: entry.endLine + 1), !prev.isEmpty {
             let restricted = prev.restricted(to: fields)
             if !restricted.isEmpty { return restricted }
         }

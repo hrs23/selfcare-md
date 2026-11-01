@@ -61,10 +61,6 @@ public final class VaultIndex: @unchecked Sendable {
         return items
     }
 
-    public func previousValue(_ vault: Vault, menu: String, date: String, current: DailyDocument?, beforeLine: Int?) -> Value? {
-        Self.previousValue(in: dailies(vault), menu: menu, date: date, current: current, beforeLine: beforeLine)
-    }
-
     public static func previousValue(in dailies: [(date: String, doc: DailyDocument)], menu: String, date: String, current: DailyDocument?, beforeLine: Int?) -> Value? {
         if let current, let beforeLine {
             let sameDay = current.entries.filter { $0.name.caseInsensitiveCompare(menu) == .orderedSame }
